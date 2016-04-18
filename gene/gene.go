@@ -17,14 +17,39 @@ type Gene []byte
 func (g Gene) Heal() {
 	switch g[len(g)-1] {
 	case byte('+'), byte('-'), byte('*'), byte('/'):
-		// g[len(g)-1] = byte(' ')
 		g[len(g)-1] = 0
+	case byte(','):
+		g[len(g)-1] = 0
+	}
+
+	// lg := len(g)
+	for i, _ := range g {
+		lx := i - 1
+		// nx := i + 1
+		if lx > 0 {
+			if g[lx] == ',' && g[i] == ',' {
+				g[lx] = 0
+			}
+			switch g[lx] {
+			case byte('+'), byte('-'), byte('*'), byte('/'):
+				switch g[i] {
+				case byte('+'), byte('-'), byte('*'), byte('/'):
+					g[lx] = 0
+				case byte(','):
+					g[i] = 0
+				}
+			}
+		}
+		// if nx < lg {
+		// 	next := g[nx]
+		// }
 	}
 }
 
 func (g Gene) MarshalTree() (*GeneNode, error) {
 	cursor := CursorNil
 	var root *GeneNode = nil
+	var contextRoot *GeneNode = nil
 	var current *GeneNode = nil
 	var numberNode *GeneNode = nil
 	var variableNode *GeneNode = nil
@@ -70,7 +95,11 @@ func (g Gene) MarshalTree() (*GeneNode, error) {
 				current = root
 			}
 			cursor = CursorOperator
-		case byte(','):
+		case byte('{'):
+			contextRoot = current
+		case byte('}'):
+			current = contextRoot
+		default:
 			cursor = CursorSeparator
 		}
 	}

@@ -16,7 +16,8 @@ func main() {
 	//
 	//	EXPRESSION
 	//	21 * (30 - 7)
-	g := gene.Gene("*$a-,30,10,$b,12*10,70,")
+	g := gene.Gene("*{-10,20},{+50,77},{$a/15,4}")
+	fmt.Println(string(g))
 	g.Heal()
 	fmt.Println(string(g))
 	root, _ := g.MarshalTree()
