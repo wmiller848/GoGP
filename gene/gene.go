@@ -1,7 +1,7 @@
 package gene
 
 import (
-	_ "fmt"
+	_ "github.com/wmiller848/GoGP/util"
 )
 
 const (
@@ -12,96 +12,14 @@ const (
 	CursorSeparator int = 4
 )
 
-type Gene []byte
-
-func (g Gene) Heal() {
-	switch g[len(g)-1] {
-	case byte('+'), byte('-'), byte('*'), byte('/'):
-		g[len(g)-1] = 0
-	case byte(','):
-		g[len(g)-1] = 0
-	}
-
-	// lg := len(g)
-	for i, _ := range g {
-		lx := i - 1
-		// nx := i + 1
-		if lx > 0 {
-			if g[lx] == ',' && g[i] == ',' {
-				g[lx] = 0
-			}
-			switch g[lx] {
-			case byte('+'), byte('-'), byte('*'), byte('/'):
-				switch g[i] {
-				case byte('+'), byte('-'), byte('*'), byte('/'):
-					g[lx] = 0
-				case byte(','):
-					g[i] = 0
-				}
-			}
-		}
-		// if nx < lg {
-		// 	next := g[nx]
-		// }
-	}
+type Gene interface {
+	Eq(Gene) bool
+	Clone() []byte
+	Heal() []byte
+	LastChrome(int) int
+	Len() int
+	At(int) byte
+	MarshalTree() (*GeneNode, error)
 }
 
-func (g Gene) MarshalTree() (*GeneNode, error) {
-	cursor := CursorNil
-	var root *GeneNode = nil
-	var contextRoot *GeneNode = nil
-	var current *GeneNode = nil
-	var numberNode *GeneNode = nil
-	var variableNode *GeneNode = nil
-	for _, chrom := range g {
-		switch chrom {
-		case byte('$'), byte('a'), byte('b'), byte('c'), byte('d'), byte('e'), byte('f'), byte('g'), byte('h'), byte('i'), byte('j'), byte('k'), byte('l'), byte('m'), byte('n'), byte('o'), byte('p'), byte('q'), byte('r'), byte('s'), byte('t'), byte('u'), byte('v'), byte('w'), byte('x'), byte('y'), byte('z'):
-			if cursor == CursorVariable {
-				variableNode.Value += string(chrom)
-			} else {
-				node := &GeneNode{
-					Value:    string(chrom),
-					Children: []*GeneNode{},
-				}
-				current.Add(node)
-				variableNode = node
-			}
-			cursor = CursorVariable
-		case byte('0'), byte('1'), byte('2'), byte('3'), byte('4'), byte('5'), byte('6'), byte('7'), byte('8'), byte('9'):
-			if cursor == CursorNumber {
-				numberNode.Value += string(chrom)
-			} else {
-				node := &GeneNode{
-					Value:    string(chrom),
-					Children: []*GeneNode{},
-				}
-				current.Add(node)
-				numberNode = node
-			}
-			cursor = CursorNumber
-		case byte('+'), byte('-'), byte('*'), byte('/'):
-			if cursor != CursorNil {
-				node := &GeneNode{
-					Value:    string(chrom),
-					Children: []*GeneNode{},
-				}
-				current.Add(node)
-				current = node
-			} else {
-				root = &GeneNode{
-					Value:    string(chrom),
-					Children: []*GeneNode{},
-				}
-				current = root
-			}
-			cursor = CursorOperator
-		case byte('{'):
-			contextRoot = current
-		case byte('}'):
-			current = contextRoot
-		default:
-			cursor = CursorSeparator
-		}
-	}
-	return root, nil
-}
+type GenericGene []byte

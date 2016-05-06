@@ -1,14 +1,36 @@
-main = ->
-  console.log('Running main')
-  args = process.argv.slice(2)
-  console.log(args)
-  $a = args[0]
-  $b = args[1]
-  ##
-  ## Parse variables from input
-  #{{}}
-  ## Run the expression
-  #{{}}
-  $a*(30-10-$b-12-(10*70))
+######################
+## GoGP Program
+######################
 
-console.log(main())
+DNA = '{{dna}}'
+
+######################
+## Stage Spawn
+######################
+console.log('Setting Argv')
+args = process.argv.slice(2)
+{{vars}}
+
+console.log('Spawning')
+{{spawn}}
+
+######################
+## Stage Dieing
+######################
+process.on('beforeExit', ->
+  console.log('Dieing...')
+  {{dieing}}
+)
+
+######################
+## Stage Dead
+######################
+process.on('exit', ->
+  console.log('Dead...')
+  {{dead}}
+)
+
+######################
+## Stage Alive
+######################
+{{alive}}
