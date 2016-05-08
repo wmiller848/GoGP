@@ -44,12 +44,30 @@ func (g MathGene) LastChrome(i int) int {
 	return lx
 }
 
+func (g MathGene) NextChrome(i int) int {
+	var nx int
+	for {
+		nx = i + 1
+		if nx < len(g) {
+			if g[nx] != 0x00 {
+				break
+			}
+		}
+		i++
+		if i >= len(g) {
+			nx = -1
+			break
+		}
+	}
+	return nx
+}
+
 func (g MathGene) Len() int {
 	return len(g)
 }
 
 func (g MathGene) At(i int) byte {
-	if i > 0 && i < len(g) {
+	if i < 0 || i > len(g) {
 		return 0x00
 	}
 	return g[i]
@@ -68,6 +86,13 @@ func (g MathGene) Heal() []byte {
 					case byte(','):
 						g[i] = 0x00
 						clean = false
+					case byte('+'), byte('-'), byte('*'), byte('/'):
+						nx := g.NextChrome(i)
+						if nx >= 0 && g[nx] == byte('}') {
+							g[lx] = 0x00
+							g[i] = 0x00
+							g[nx] = 0x00
+						}
 					}
 				case byte(','):
 					switch g[i] {

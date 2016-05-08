@@ -1,8 +1,9 @@
 package gene
 
 import (
-	"github.com/wmiller848/GoGP/util"
 	_ "strconv"
+
+	"github.com/wmiller848/GoGP/util"
 )
 
 var blockVars []byte = []byte{
@@ -20,7 +21,7 @@ func (m *MathBuildingBlock) Stages() []int {
 	return []int{StageAlive}
 }
 
-func (m *MathBuildingBlock) Random(varCount, knobCount int) (Gene, string) {
+func (m *MathBuildingBlock) Random(varCount, knobCount int) Gene {
 	g := MathGene{randomOperator()}
 	cursor := CursorOperator
 	size := util.RandomNumber(knobCount, knobCount*2) // random value
@@ -31,14 +32,22 @@ func (m *MathBuildingBlock) Random(varCount, knobCount int) (Gene, string) {
 		pick := util.RandomNumber(0, 100)
 		if i < c {
 			if pick < 50 {
-				g = append(g, randomNumber()+48)
+				var num byte = 0
+				if cursor != CursorNumber {
+					for num <= 48 {
+						num = randomNumber() + 48
+					}
+				} else {
+					num = randomNumber() + 48
+				}
+				g = append(g, num)
 				cursor = CursorNumber
 			} else if pick < 90 && cursor != CursorOperator {
 				g = append(g, randomOperator())
 				cursor = CursorOperator
 			} else if pick < 95 && knobCount > 4 {
 				g = append(g, byte('{'))
-				g = append(g, m.Random(0, knobCount/4).Clone()...)
+				g = append(g, m.Random(0, knobCount/2).Clone()...)
 				g = append(g, byte('}'))
 				cursor = CursorSeparator
 			} else {
@@ -51,15 +60,7 @@ func (m *MathBuildingBlock) Random(varCount, knobCount int) (Gene, string) {
 			cursor = CursorOperator
 		}
 		if pick > 50 && cursor != CursorNumber && j < k {
-			c := ""
-			ji := j % len(blockVars)
-			if j != 0 && ji == 0 {
-				jd := j / len(blockVars)
-				for t := 0; t < jd; t++ {
-					c += string(blockVars[t])
-				}
-			}
-			g = append(g, []byte("$"+c+string(blockVars[ji])+",")...)
+			g = append(g, []byte(GetVariableBlock(j)+",")...)
 			cursor = CursorVariable
 			j++
 		}

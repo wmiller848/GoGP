@@ -17,6 +17,7 @@ type Gene interface {
 	Clone() []byte
 	Heal() []byte
 	LastChrome(int) int
+	NextChrome(int) int
 	Len() int
 	At(int) byte
 	MarshalTree() (*GeneNode, error)

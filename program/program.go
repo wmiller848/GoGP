@@ -1,19 +1,21 @@
 package program
 
 import (
-	"github.com/wmiller848/GoGP/gene"
-	_ "github.com/wmiller848/GoGP/util"
 	"io/ioutil"
 	"strings"
+
+	"github.com/wmiller848/GoGP/gene"
+	_ "github.com/wmiller848/GoGP/util"
 )
 
 type Program struct {
+	Block    gene.BuildingBlock
 	Gene     gene.Gene
 	Template string
 }
 
 func New(varCount, knobCount int, block gene.BuildingBlock) *Program {
-	g, varsTmpl := block.Random(varCount, knobCount)
+	g := block.Random(varCount, knobCount)
 	tplBytes, _ := ioutil.ReadFile("./program/main.coffee")
 	return &Program{
 		Gene:     g,
@@ -29,7 +31,7 @@ func (p *Program) MarshalProgram() ([]byte, error) {
 	//=====
 	// Vars
 	//=====
-	pgm = strings.Replace(pgm, "{{vars}}", "", 1)
+	pgm = strings.Replace(pgm, "{{vars}}", gene.VarsTemplate(p.Gene), 1)
 	//=====
 	// Spawn
 	//=====
