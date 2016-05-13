@@ -38,8 +38,6 @@ const (
 
 type BuildingBlock interface {
 	Stages() []int
-	// Bytes() [][]byte
-	// Distribution() (map[string]int, int)
 	Random(int, int) Gene
 }
 

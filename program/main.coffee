@@ -47,7 +47,7 @@ if pargs.length == 0
       chunks = chunks.toString().trim().split('\n')
       for chunk in chunks
         args = []
-        data = Buffer.from(chunk.split(' '))
+        data = new Buffer.from(chunk.split(' '))
         args.push(data...)
         run()
   )
@@ -56,6 +56,6 @@ if pargs.length == 0
   )
 else
   args = []
-  data = Buffer.from(pargs.join(' ').trim().split(' '))
+  data = new Buffer.from(pargs.join(' ').trim().split(' '))
   args.push(data...)
   run()
