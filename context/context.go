@@ -34,23 +34,41 @@ func (c *Context) EvalFunc(scoreFunc ScoreFunction) {
 
 }
 
-func (c *Context) RunWithInlineScore(buf []byte, inputs, population, generations int) *program.Program {
+func (c *Context) InitPopulation(inputs, population int) {
 	var i int
 	c.Programs = make([]*program.Program, population)
 	for i = 0; i < population; i++ {
 		pgm := program.New(inputs, inputs*4, &gene.MathBuildingBlock{})
 		c.Programs[i] = pgm
 	}
+}
 
+func (c *Context) RunWithInlineScore(traingBuf []byte, inputs, population, generations int) *program.Program {
+	c.InitPopulation(inputs, population)
+	var i int
 	for i = 0; i < generations; i++ {
-		c.EvalInline()
+		c.EvalInline(traingBuf)
 	}
 
 	return c.Fitest()
 }
 
-func (c *Context) EvalInline() {
+func (c *Context) EvalInline(traingBuf []byte) {
+	//	Each program in population ->
+	//		* Apply 'life' ->
+	//			* Drain Energy
 
+	//		* Each testBuf row ->
+	//			* compute average score
+
+	//	Each in top 30% ->
+	//		* Add Energy
+	//		* Cross with other top 30%
+
+	//	Each program in population ->
+	//		* If energy <= 0
+	//			* dead
+	//	Get population - dead
 }
 
 func (c *Context) Fitest() *program.Program {
