@@ -2,6 +2,7 @@ package util
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -34,4 +35,10 @@ func RandomNumber(min, max int) uint {
 	} else {
 		return uint(p.Uint64())
 	}
+}
+
+func Sha256(data []byte) []byte {
+	hash := sha256.New()
+	hash.Write(data)
+	return hash.Sum(nil)
 }

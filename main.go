@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/codegangsta/cli"
-	"github.com/wmiller848/GoGP/context"
 	"io/ioutil"
 	"os"
+
+	"github.com/codegangsta/cli"
+	"github.com/wmiller848/GoGP/context"
 )
 
 func score(output int) int {
@@ -18,8 +19,8 @@ func run(buf []byte, inline bool) {
 	ctx := context.New()
 	lines := bytes.Split(buf, []byte("\n"))
 	inputs := len(bytes.Split(lines[0], []byte(" ")))
-	population := 100
-	generations := 1000
+	population := 10
+	generations := 1
 	if inline == true {
 		inputs -= 1
 		fmt.Println("Learning from population of", population, "over", generations, "generations for", inputs, "inputs across", len(lines), "rows")

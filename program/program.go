@@ -27,6 +27,13 @@ func (p *Program) MarshalProgram() ([]byte, error) {
 	pgm := p.Template
 	root, _ := p.Gene.MarshalTree()
 	exp, _ := root.MarshalExpression()
+	//=====
+	// Coffee Path
+	//=====
+	pgm = strings.Replace(pgm, "{{coffee_path}}", "/usr/local/bin/coffee", 1)
+	//=====
+	// DNA
+	//=====
 	pgm = strings.Replace(pgm, "{{dna}}", string(p.Gene.Clone()), 1)
 	//=====
 	// Vars

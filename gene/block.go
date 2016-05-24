@@ -62,7 +62,7 @@ func VarsTemplate(g Gene) string {
 		switch g.At(i) {
 		case byte('$'):
 			cursor = CursorVariable
-			tmpl += "$"
+			tmpl += string(g.At(i))
 		case byte('a'), byte('b'), byte('c'), byte('d'), byte('e'), byte('f'), byte('g'), byte('h'), byte('i'), byte('j'), byte('k'), byte('l'), byte('m'), byte('n'), byte('o'), byte('p'), byte('q'), byte('r'), byte('s'), byte('t'), byte('u'), byte('v'), byte('w'), byte('x'), byte('y'), byte('z'):
 			if cursor == CursorVariable {
 				cursor = CursorVariable
