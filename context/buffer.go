@@ -54,6 +54,10 @@ func (b *Buffer) Write(data []byte) (int, error) {
 	return leng, nil
 }
 
+func (b *Buffer) Pipe(r io.Reader) {
+	data := b.read()
+}
+
 func (b *Buffer) Data() []byte {
 	return b.data
 }

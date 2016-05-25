@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/codegangsta/cli"
@@ -15,16 +13,13 @@ func score(output int) int {
 	return 0
 }
 
-func run(buf []byte, inline bool) {
+func run(pipe io.Reader, inputs int, inline bool) {
 	ctx := context.New()
-	lines := bytes.Split(buf, []byte("\n"))
-	inputs := len(bytes.Split(lines[0], []byte(" ")))
 	population := 1
 	generations := 1
 	if inline == true {
-		inputs -= 1
-		fmt.Println("Learning from population of", population, "over", generations, "generations for", inputs, "inputs across", len(lines), "rows")
-		ctx.RunWithInlineScore(buf, inputs, population, generations)
+		fmt.Println("Learning from population of", population, "over", generations, "generations for", inputs, "inputs")
+		ctx.RunWithInlineScore(pipe, inputs, population, generations)
 	} else {
 		fmt.Println("Scoring Function Support Not Implemented")
 		// ctx.RunWithScoreFunc(buf, inputs, population, generations, score)
@@ -40,40 +35,45 @@ func main() {
 			Name:    "learn",
 			Aliases: []string{"l"},
 			Flags: []cli.Flag{
+				cli.IntFlag{
+					Name:   "count, c",
+					Usage:  "Number of input fields to learn",
+					EnvVar: "GOGP_COUNT",
+				},
 				cli.BoolFlag{
 					Name:   "inline, i",
-					Usage:  "Traing data has anwser inline.",
+					Usage:  "Traing data has anwser inline as the last value in each row.",
 					EnvVar: "GOGP_INLINE",
 				},
 			},
 			Action: func(c *cli.Context) {
 				args := c.Args()
-				buf := []byte{}
+				var pipe io.Reader
 				if len(args) == 0 {
-					// Handle stdin
-					bio := bufio.NewReader(os.Stdin)
-					for {
-						line, _, err := bio.ReadLine()
-						if err != nil {
-							break
-						}
-						buf = append(buf, line...)
-						buf = append(buf, byte('\n'))
-					}
+					//// Handle stdin
+					//bio := bufio.NewReader(os.Stdin)
+					//for {
+					//line, _, err := bio.ReadLine()
+					//if err != nil {
+					//break
+					//}
+					//buf = append(buf, line...)
+					//buf = append(buf, byte('\n'))
+					//}
+					pipe = os.Stdin
 				} else if len(args) == 1 {
 					// Handle file path
-					inputFile := args[0]
-					var err error
-					buf, err = ioutil.ReadFile(inputFile)
-					if err != nil {
-						fmt.Println(err.Error())
-						return
-					}
+					//inputFile := args[0]
+					//buf, err := ioutil.ReadFile(inputFile)
+					//if err != nil {
+					//fmt.Println(err.Error())
+					//return
+					//}
 				} else {
 					fmt.Println("Too many arguments, provide path to one file.")
 					return
 				}
-				run(buf, c.Bool("inline"))
+				run(pipe, c.Int("count"), c.Bool("inline"))
 			},
 		},
 	}

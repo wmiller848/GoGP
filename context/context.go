@@ -1,8 +1,8 @@
 package context
 
 import (
-	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -44,22 +44,22 @@ func (c *Context) EvalFunc(scoreFunc ScoreFunction) {
 
 }
 
-func (c *Context) RunWithInlineScore(traingBuf []byte, inputs, population, generations int) *program.Program {
+func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generations int) *program.Program {
 	os.Mkdir("./out", 0777)
-	sha := util.Sha256(traingBuf)
+	sha := util.Random(32)
 	os.Mkdir("./out/generations", 0777)
 	os.RemoveAll("./out/generations/" + util.Hex(sha))
 	os.Mkdir("./out/generations/"+util.Hex(sha), 0777)
 	c.InitPopulation(inputs, population)
 	var i int
 	for i = 0; i < generations; i++ {
-		c.EvalInline(i, sha, traingBuf)
+		c.EvalInline(pipe, i, sha)
 	}
 
 	return c.Fitest()
 }
 
-func (c *Context) EvalInline(generation int, uuid, traingBuf []byte) {
+func (c *Context) EvalInline(pipe io.Reader, generation int, uuid []byte) {
 	//fmt.Println("Traing Data", string(traingBuf), traingBuf)
 	path := "./out/generations/" + util.Hex(uuid) + "/" + strconv.Itoa(generation)
 	os.Mkdir(path, 0777)
@@ -73,7 +73,6 @@ func (c *Context) EvalInline(generation int, uuid, traingBuf []byte) {
 
 	//		* Each testBuf row ->
 	//			* compute average score
-	rows := bytes.Split(traingBuf, []byte("\n"))
 	for i, _ := range c.Programs {
 		prgm := c.Programs[i]
 		prgm.Energy -= 1
@@ -81,12 +80,9 @@ func (c *Context) EvalInline(generation int, uuid, traingBuf []byte) {
 		cmd := exec.Command("coffee", cmdStr)
 		//
 		cmd.Stderr = os.Stderr
-		//
 		stdoutBuffer := NewBuffer()
 		cmd.Stdout = stdoutBuffer
-		//
-		stdinBuffer := NewBuffer()
-		cmd.Stdin = stdinBuffer
+		cmd.Stdin = pipe
 		//
 		prgmBytes, _ := prgm.MarshalProgram()
 		fmt.Println(i, "Command - '"+cmdStr+"'")
@@ -98,28 +94,27 @@ func (c *Context) EvalInline(generation int, uuid, traingBuf []byte) {
 		if err != nil {
 			fmt.Println(err.Error())
 		}
-		correctValues := make([]int, len(rows))
-		for j, _ := range rows {
-			row := rows[j]
-			rowArr := bytes.Split(row, []byte(" "))
-			correctVal, err := strconv.Atoi(string(rowArr[len(rowArr)-1]))
-			if err != nil {
-				continue
-			}
-			correctValues[j] = correctVal
-			input := append([]byte{}, bytes.Join(rowArr[:len(rowArr)-1], []byte(" "))...)
-			input = append(input, []byte("\n")...)
-			stdinBuffer.Write(input)
-		}
-		stdinBuffer.Close()
+		//correctValues := make([]int, len(rows))
+		//for j, _ := range rows {
+		//row := rows[j]
+		//rowArr := bytes.Split(row, []byte(" "))
+		//correctVal, err := strconv.Atoi(string(rowArr[len(rowArr)-1]))
+		//if err != nil {
+		//continue
+		//}
+		//correctValues[j] = correctVal
+		//input := append([]byte{}, bytes.Join(rowArr[:len(rowArr)-1], []byte(" "))...)
+		//input = append(input, []byte("\n")...)
+		//stdinBuffer.Write(input)
+		//}
 		err = cmd.Wait()
 		if err != nil {
 			fmt.Println(err.Error())
 		}
 		// Compair outputs to correct vals
 		//fmt.Println(string(stdinBuffer.Data()), string(stdoutBuffer.Data()))
-		stdout := bytes.Split(stdoutBuffer.Data(), []byte("\n"))
-		fmt.Println(len(stdout), len(correctValues))
+		//stdout := bytes.Split(stdoutBuffer.Data(), []byte("\n"))
+		//fmt.Println(len(stdout), len(correctValues))
 	}
 
 	//	Each in top 30% ->
