@@ -79,10 +79,15 @@ func (c *Context) EvalInline(generation int, uuid, traingBuf []byte) {
 		prgm.Energy -= 1
 		cmdStr := path + "/" + prgm.ID
 		cmd := exec.Command("coffee", cmdStr)
-		cmd.Stdout = os.Stdout
+		//
 		cmd.Stderr = os.Stderr
-		buffer := NewBuffer()
-		cmd.Stdin = buffer
+		//
+		stdoutBuffer := NewBuffer()
+		cmd.Stdout = stdoutBuffer
+		//
+		stdinBuffer := NewBuffer()
+		cmd.Stdin = stdinBuffer
+		//
 		prgmBytes, _ := prgm.MarshalProgram()
 		fmt.Println(i, "Command - '"+cmdStr+"'")
 		err := ioutil.WriteFile(path+"/"+prgm.ID, prgmBytes, 0555)
@@ -93,6 +98,7 @@ func (c *Context) EvalInline(generation int, uuid, traingBuf []byte) {
 		if err != nil {
 			fmt.Println(err.Error())
 		}
+		correctValues := make([]int, len(rows))
 		for j, _ := range rows {
 			row := rows[j]
 			if len(row) > 0 {
@@ -100,14 +106,16 @@ func (c *Context) EvalInline(generation int, uuid, traingBuf []byte) {
 				rowArr := bytes.Split(row, []byte(" "))
 				//fmt.Println("Row Array", rowArr)
 				if len(rowArr) > 0 {
-					_, err := strconv.Atoi(string(rowArr[len(rowArr)-1]))
+					correctVal, err := strconv.Atoi(string(rowArr[len(rowArr)-1]))
 					if err != nil {
 						continue
 					}
+					correctValues[j] = correctVal
 					input := append([]byte{}, bytes.Join(rowArr[:len(rowArr)-1], []byte(" "))...)
 					input = append(input, []byte("\n")...)
 					//fmt.Println(prgm.ID, "-", correctVal, string(input))
-					*buffer = append(*buffer, input...)
+					// *stdinBuffer = append(*stdinBuffer, input...)
+					stdinBuffer.Write(input)
 				}
 			}
 		}
@@ -116,6 +124,8 @@ func (c *Context) EvalInline(generation int, uuid, traingBuf []byte) {
 		if err != nil {
 			fmt.Println(err.Error())
 		}
+		// Compair outputs to correct vals
+		fmt.Println(string(stdoutBuffer.Data()), correctValues)
 	}
 
 	//	Each in top 30% ->
