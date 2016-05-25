@@ -101,31 +101,25 @@ func (c *Context) EvalInline(generation int, uuid, traingBuf []byte) {
 		correctValues := make([]int, len(rows))
 		for j, _ := range rows {
 			row := rows[j]
-			if len(row) > 0 {
-				//fmt.Println("Row", row)
-				rowArr := bytes.Split(row, []byte(" "))
-				//fmt.Println("Row Array", rowArr)
-				if len(rowArr) > 0 {
-					correctVal, err := strconv.Atoi(string(rowArr[len(rowArr)-1]))
-					if err != nil {
-						continue
-					}
-					correctValues[j] = correctVal
-					input := append([]byte{}, bytes.Join(rowArr[:len(rowArr)-1], []byte(" "))...)
-					input = append(input, []byte("\n")...)
-					//fmt.Println(prgm.ID, "-", correctVal, string(input))
-					// *stdinBuffer = append(*stdinBuffer, input...)
-					stdinBuffer.Write(input)
-				}
+			rowArr := bytes.Split(row, []byte(" "))
+			correctVal, err := strconv.Atoi(string(rowArr[len(rowArr)-1]))
+			if err != nil {
+				continue
 			}
+			correctValues[j] = correctVal
+			input := append([]byte{}, bytes.Join(rowArr[:len(rowArr)-1], []byte(" "))...)
+			input = append(input, []byte("\n")...)
+			stdinBuffer.Write(input)
 		}
-		//fmt.Println(string(*buffer))
+		stdinBuffer.Close()
 		err = cmd.Wait()
 		if err != nil {
 			fmt.Println(err.Error())
 		}
 		// Compair outputs to correct vals
-		fmt.Println(string(stdoutBuffer.Data()), correctValues)
+		//fmt.Println(string(stdinBuffer.Data()), string(stdoutBuffer.Data()))
+		stdout := bytes.Split(stdoutBuffer.Data(), []byte("\n"))
+		fmt.Println(len(stdout), len(correctValues))
 	}
 
 	//	Each in top 30% ->

@@ -19,7 +19,7 @@ func run(buf []byte, inline bool) {
 	ctx := context.New()
 	lines := bytes.Split(buf, []byte("\n"))
 	inputs := len(bytes.Split(lines[0], []byte(" ")))
-	population := 10
+	population := 1
 	generations := 1
 	if inline == true {
 		inputs -= 1
