@@ -26,6 +26,7 @@ func (b *Buffer) Close() {
 }
 
 func (b *Buffer) Read(data []byte) (int, error) {
+	b.Lock()
 	bleng := len(b.data)
 	dleng := len(data)
 	if b.open == true || bleng > 0 {
@@ -36,26 +37,67 @@ func (b *Buffer) Read(data []byte) (int, error) {
 			leng = dleng
 		}
 		if leng > 0 {
-			b.Lock()
 			copy(data, b.data[:leng])
 			b.data = b.data[leng:]
-			b.Unlock()
 		}
+		b.Unlock()
 		return leng, nil
 	}
+	b.Unlock()
 	return 0, io.EOF
 }
 
 func (b *Buffer) Write(data []byte) (int, error) {
 	b.Lock()
 	b.data = append(b.data, data...)
-	b.Unlock()
 	leng := len(data)
+	b.Unlock()
 	return leng, nil
 }
 
-func (b *Buffer) Pipe(r io.Reader) {
-	data := b.read()
+func (b *Buffer) Tap(r io.Reader) (io.Reader, chan []byte) {
+	tap := make(chan []byte)
+	go func() {
+		for {
+			data := make([]byte, 1024)
+			leng, err := r.Read(data)
+			if err == io.EOF {
+				b.Close()
+				close(tap)
+				return
+			}
+			if leng > 0 {
+				b.Write(data)
+				tap <- data
+			} else {
+				b.Close()
+				close(tap)
+				return
+			}
+		}
+	}()
+	return b, tap
+}
+
+func (b *Buffer) Pipe() chan []byte {
+	tap := make(chan []byte)
+	go func() {
+		for {
+			data := make([]byte, 1024)
+			leng, err := b.Read(data)
+			if err == io.EOF {
+				close(tap)
+				return
+			}
+			if leng > 0 {
+				tap <- data
+			} else {
+				close(tap)
+				return
+			}
+		}
+	}()
+	return tap
 }
 
 func (b *Buffer) Data() []byte {

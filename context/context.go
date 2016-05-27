@@ -30,19 +30,17 @@ func New() *Context {
 	return &Context{}
 }
 
-func (c *Context) RunWithScoreFunc(inputs, population, generations int, scoreFunc ScoreFunction) *program.Program {
-	var i int
-	c.InitPopulation(inputs, population)
-	for i = 0; i < generations; i++ {
-		c.EvalFunc(scoreFunc)
-	}
+//func (c *Context) RunWithScoreFunc(inputs, population, generations int, scoreFunc ScoreFunction) *program.Program {
+//var i int
+//c.InitPopulation(inputs, population)
+//for i = 0; i < generations; i++ {
+//c.EvalFunc(scoreFunc)
+//}
+//return c.Fitest()
+//}
 
-	return c.Fitest()
-}
-
-func (c *Context) EvalFunc(scoreFunc ScoreFunction) {
-
-}
+//func (c *Context) EvalFunc(scoreFunc ScoreFunction) {
+//}
 
 func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generations int) *program.Program {
 	os.Mkdir("./out", 0777)
@@ -55,7 +53,6 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generat
 	for i = 0; i < generations; i++ {
 		c.EvalInline(pipe, i, sha)
 	}
-
 	return c.Fitest()
 }
 
@@ -82,7 +79,18 @@ func (c *Context) EvalInline(pipe io.Reader, generation int, uuid []byte) {
 		cmd.Stderr = os.Stderr
 		stdoutBuffer := NewBuffer()
 		cmd.Stdout = stdoutBuffer
-		cmd.Stdin = pipe
+		//
+		stdinBuffer := NewBuffer()
+		var stdinTap chan []byte
+		cmd.Stdin, stdinTap = stdinBuffer.Tap(pipe)
+		open := true
+		var data []byte
+		for open == true {
+			var d []byte
+			d, open = <-stdinTap
+			data = append(data, d...)
+		}
+		fmt.Println(string(data))
 		//
 		prgmBytes, _ := prgm.MarshalProgram()
 		fmt.Println(i, "Command - '"+cmdStr+"'")
@@ -94,23 +102,20 @@ func (c *Context) EvalInline(pipe io.Reader, generation int, uuid []byte) {
 		if err != nil {
 			fmt.Println(err.Error())
 		}
-		//correctValues := make([]int, len(rows))
-		//for j, _ := range rows {
-		//row := rows[j]
-		//rowArr := bytes.Split(row, []byte(" "))
-		//correctVal, err := strconv.Atoi(string(rowArr[len(rowArr)-1]))
-		//if err != nil {
-		//continue
-		//}
-		//correctValues[j] = correctVal
-		//input := append([]byte{}, bytes.Join(rowArr[:len(rowArr)-1], []byte(" "))...)
-		//input = append(input, []byte("\n")...)
-		//stdinBuffer.Write(input)
-		//}
 		err = cmd.Wait()
 		if err != nil {
 			fmt.Println(err.Error())
 		}
+
+		stdoutTap := stdoutBuffer.Pipe()
+		open = true
+		data = []byte{}
+		for open == true {
+			var d []byte
+			d, open = <-stdoutTap
+			data = append(data, d...)
+		}
+		fmt.Println(string(data))
 		// Compair outputs to correct vals
 		//fmt.Println(string(stdinBuffer.Data()), string(stdoutBuffer.Data()))
 		//stdout := bytes.Split(stdoutBuffer.Data(), []byte("\n"))

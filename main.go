@@ -13,17 +13,12 @@ func score(output int) int {
 	return 0
 }
 
-func run(pipe io.Reader, inputs int, inline bool) {
+func run(pipe io.Reader, inputs int) {
 	ctx := context.New()
 	population := 1
 	generations := 1
-	if inline == true {
-		fmt.Println("Learning from population of", population, "over", generations, "generations for", inputs, "inputs")
-		ctx.RunWithInlineScore(pipe, inputs, population, generations)
-	} else {
-		fmt.Println("Scoring Function Support Not Implemented")
-		// ctx.RunWithScoreFunc(buf, inputs, population, generations, score)
-	}
+	fmt.Println("Learning from population of", population, "over", generations, "generations for", inputs, "inputs")
+	ctx.RunWithInlineScore(pipe, inputs, population, generations)
 }
 
 func main() {
@@ -39,11 +34,6 @@ func main() {
 					Name:   "count, c",
 					Usage:  "Number of input fields to learn",
 					EnvVar: "GOGP_COUNT",
-				},
-				cli.BoolFlag{
-					Name:   "inline, i",
-					Usage:  "Traing data has anwser inline as the last value in each row.",
-					EnvVar: "GOGP_INLINE",
 				},
 			},
 			Action: func(c *cli.Context) {
@@ -73,7 +63,7 @@ func main() {
 					fmt.Println("Too many arguments, provide path to one file.")
 					return
 				}
-				run(pipe, c.Int("count"), c.Bool("inline"))
+				run(pipe, c.Int("count"))
 			},
 		},
 	}
