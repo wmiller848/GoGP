@@ -37,9 +37,7 @@ process.on('exit', ->
 run = ->
   {{vars}}
   output = {{alive}}
-  if isNaN(output)
-    output = 'NaN'
-  process.stdout.write(new Buffer.from(output.toString() + '\n'))
+  process.stdout.write(new Buffer.from(output.toString() + '\n')) unless isNaN(output)
 
 if pargs.length == 0
   process.stdin.setEncoding('utf8')

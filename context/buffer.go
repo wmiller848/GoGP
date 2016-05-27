@@ -55,7 +55,7 @@ func (b *Buffer) Write(data []byte) (int, error) {
 	return leng, nil
 }
 
-func (b *Buffer) Tap(r io.Reader) (io.Reader, chan []byte) {
+func (b *Buffer) Pipe(r io.Reader) (io.Reader, chan []byte) {
 	tap := make(chan []byte)
 	go func() {
 		for {
@@ -79,7 +79,7 @@ func (b *Buffer) Tap(r io.Reader) (io.Reader, chan []byte) {
 	return b, tap
 }
 
-func (b *Buffer) Pipe() chan []byte {
+func (b *Buffer) Tap() chan []byte {
 	tap := make(chan []byte)
 	go func() {
 		for {

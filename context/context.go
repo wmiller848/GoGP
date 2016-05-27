@@ -1,9 +1,11 @@
 package context
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"os"
 	"os/exec"
 	"strconv"
@@ -19,6 +21,7 @@ type ProgramInstance struct {
 	*program.Program
 	Energy int
 	Stage  int
+	Score  float64
 	ID     string
 }
 
@@ -51,13 +54,12 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generat
 	c.InitPopulation(inputs, population)
 	var i int
 	for i = 0; i < generations; i++ {
-		c.EvalInline(pipe, i, sha)
+		c.EvalInline(pipe, i, inputs, sha)
 	}
 	return c.Fitest()
 }
 
-func (c *Context) EvalInline(pipe io.Reader, generation int, uuid []byte) {
-	//fmt.Println("Traing Data", string(traingBuf), traingBuf)
+func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte) {
 	path := "./out/generations/" + util.Hex(uuid) + "/" + strconv.Itoa(generation)
 	os.Mkdir(path, 0777)
 	//	Each program in population ->
@@ -82,15 +84,29 @@ func (c *Context) EvalInline(pipe io.Reader, generation int, uuid []byte) {
 		//
 		stdinBuffer := NewBuffer()
 		var stdinTap chan []byte
-		cmd.Stdin, stdinTap = stdinBuffer.Tap(pipe)
+		cmd.Stdin, stdinTap = stdinBuffer.Pipe(pipe)
 		open := true
 		var data []byte
+		var assert []float64
 		for open == true {
 			var d []byte
 			d, open = <-stdinTap
 			data = append(data, d...)
+			lines := bytes.Split(data, []byte("\n"))
+			data = []byte{}
+			for i, _ := range lines {
+				nums := bytes.Split(lines[i], []byte(" "))
+				if len(nums) == inputs+1 && len(nums[inputs]) != 0 {
+					num, err := strconv.ParseFloat(string(nums[inputs]), 64)
+					if err == nil {
+						assert = append(assert, num)
+					}
+				} else {
+					data = append(data, lines[i]...)
+				}
+			}
 		}
-		fmt.Println(string(data))
+		//
 		//
 		prgmBytes, _ := prgm.MarshalProgram()
 		fmt.Println(i, "Command - '"+cmdStr+"'")
@@ -107,19 +123,36 @@ func (c *Context) EvalInline(pipe io.Reader, generation int, uuid []byte) {
 			fmt.Println(err.Error())
 		}
 
-		stdoutTap := stdoutBuffer.Pipe()
+		stdoutTap := stdoutBuffer.Tap()
 		open = true
 		data = []byte{}
+		output := []float64{}
 		for open == true {
 			var d []byte
 			d, open = <-stdoutTap
 			data = append(data, d...)
 		}
-		fmt.Println(string(data))
-		// Compair outputs to correct vals
-		//fmt.Println(string(stdinBuffer.Data()), string(stdoutBuffer.Data()))
-		//stdout := bytes.Split(stdoutBuffer.Data(), []byte("\n"))
-		//fmt.Println(len(stdout), len(correctValues))
+		lines := bytes.Split(data, []byte("\n"))
+		for i, _ := range lines {
+			num, err := strconv.ParseFloat(string(lines[i]), 64)
+			if err == nil {
+				output = append(output, num)
+			} else {
+				data = append(data, lines[i]...)
+			}
+		}
+		// Compair output to asset
+		if len(assert) == len(output) {
+			avgScore := 0.0
+			for i, _ := range assert {
+				diff := output[i] - assert[i]
+				avgScore += diff
+			}
+			prgm.Score = math.Abs(avgScore / float64(len(assert)))
+			fmt.Println("Score - ", prgm.Score)
+		} else {
+
+		}
 	}
 
 	//	Each in top 30% ->
