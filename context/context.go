@@ -8,7 +8,9 @@ import (
 	"math"
 	"os"
 	"os/exec"
+	"sort"
 	"strconv"
+	"time"
 
 	"github.com/wmiller848/GoGP/gene"
 	"github.com/wmiller848/GoGP/program"
@@ -21,9 +23,19 @@ type ProgramInstance struct {
 	*program.Program
 	Energy int
 	Stage  int
-	Score  float64
 	ID     string
 }
+
+type ProgramScore struct {
+	Index int
+	Score float64
+}
+
+type Scores []ProgramScore
+
+func (s Scores) Len() int           { return len(s) }
+func (s Scores) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s Scores) Less(i, j int) bool { return s[i].Score < s[j].Score }
 
 type Context struct {
 	Programs []*ProgramInstance
@@ -67,11 +79,15 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 	//			* Drain Energy
 	for i, _ := range c.Programs {
 		prgm := c.Programs[i]
-		prgm.Energy -= 1
+		prgm.Energy -= 10
 	}
 
 	//		* Each testBuf row ->
 	//			* compute average score
+	scores := Scores{}
+	fountain := Multiplex(pipe, len(c.Programs))
+	// HACK HACK waiting for IO
+	time.Sleep(100 * time.Millisecond)
 	for i, _ := range c.Programs {
 		prgm := c.Programs[i]
 		prgm.Energy -= 1
@@ -84,7 +100,7 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 		//
 		stdinBuffer := NewBuffer()
 		var stdinTap chan []byte
-		cmd.Stdin, stdinTap = stdinBuffer.Pipe(pipe)
+		cmd.Stdin, stdinTap = stdinBuffer.Pipe(fountain[i])
 		open := true
 		var data []byte
 		var assert []float64
@@ -148,16 +164,50 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 				diff := output[i] - assert[i]
 				avgScore += diff
 			}
-			prgm.Score = math.Abs(avgScore / float64(len(assert)))
-			fmt.Println("Score - ", prgm.Score)
+			score := ProgramScore{
+				Index: i,
+				Score: math.Abs(avgScore / float64(len(assert))),
+			}
+			scores = append(scores, score)
+			fmt.Println("Score - ", score.Score)
 		} else {
-
+			fmt.Println("Program provided incorect amount of outputs")
 		}
 	}
 
 	//	Each in top 30% ->
 	//		* Add Energy
 	//		* Cross with other top 30%
+	sort.Sort(scores)
+	limit := len(scores) / 3
+	parents := []*ProgramInstance{}
+	children := []*ProgramInstance{}
+	for i, _ := range scores {
+		if i < limit {
+			c.Programs[scores[i].Index].Energy += 20
+			if c.Programs[scores[i].Index].Energy > 100 {
+				c.Programs[scores[i].Index].Energy = 100
+			}
+			parents = append(parents, c.Programs[scores[i].Index])
+		}
+	}
+
+	if len(parents) > 1 {
+		for i, _ := range parents {
+			mate := i
+			for mate != i {
+				mate = int(util.RandomNumber(0, len(parents)-1))
+			}
+			pgm := &ProgramInstance{
+				Program: parents[i].Mate(parents[mate].Program),
+				Energy:  100,
+				ID:      util.RandomHex(16),
+			}
+			children = append(children, pgm)
+		}
+	}
+
+	fmt.Println(parents, children)
 
 	//	Each program in population ->
 	//		* If energy <= 0
@@ -175,7 +225,7 @@ func (c *Context) InitPopulation(inputs, population int) {
 	for i = 0; i < population; i++ {
 		pgm := &ProgramInstance{
 			Program: program.New(inputs, inputs*4, &gene.MathBuildingBlock{}),
-			Energy:  1000,
+			Energy:  100,
 			ID:      util.RandomHex(16),
 		}
 		c.Programs[i] = pgm

@@ -100,6 +100,33 @@ func (b *Buffer) Tap() chan []byte {
 	return tap
 }
 
+func Multiplex(r io.Reader, size int) map[int]*Buffer {
+	p := make(map[int]*Buffer)
+	for i := 0; i < size; i++ {
+		p[i] = NewBuffer()
+	}
+	go func() {
+		for {
+			data := make([]byte, 1024)
+			leng, err := r.Read(data)
+			if err == io.EOF {
+				for i := 0; i < size; i++ {
+					p[i].Close()
+				}
+				return
+			}
+			if leng > 0 {
+				for i := 0; i < size; i++ {
+					p[i].Write(data)
+				}
+			} else {
+				return
+			}
+		}
+	}()
+	return p
+}
+
 func (b *Buffer) Data() []byte {
 	return b.data
 }

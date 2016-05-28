@@ -18,9 +18,14 @@ func New(varCount, knobCount int, block gene.BuildingBlock) *Program {
 	g := block.Random(varCount, knobCount)
 	tplBytes, _ := ioutil.ReadFile("./program/main.coffee")
 	return &Program{
+		Block:    block,
 		Gene:     g,
 		Template: string(tplBytes),
 	}
+}
+
+func (p *Program) Mate(mate *Program) *Program {
+	return New(4, 16, &gene.MathBuildingBlock{})
 }
 
 func (p *Program) MarshalProgram() ([]byte, error) {
