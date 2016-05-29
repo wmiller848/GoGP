@@ -157,7 +157,7 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 				data = append(data, lines[i]...)
 			}
 		}
-		// Compair output to asset
+		// Compair output to assert
 		if len(assert) == len(output) {
 			avgScore := 0.0
 			for i, _ := range assert {

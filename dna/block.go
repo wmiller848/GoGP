@@ -1,4 +1,4 @@
-package gene
+package dna
 
 import (
 	"strconv"
@@ -29,15 +29,14 @@ func randomNumber() byte {
 	return byte(util.RandomNumber(0, 9))
 }
 
-const (
-	StageSpawn  int = 1
-	StageAlive  int = 2
-	StageDieing int = 3
-	StageDead   int = 3
-)
+//const (
+//StageSpawn  int = 1
+//StageAlive  int = 2
+//StageDieing int = 3
+//StageDead   int = 3
+//)
 
-type BuildingBlock interface {
-	Stages() []int
+type Block interface {
 	Random(int, int) Gene
 }
 

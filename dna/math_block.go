@@ -1,4 +1,4 @@
-package gene
+package dna
 
 import (
 	_ "strconv"
@@ -14,14 +14,14 @@ var blockVars []byte = []byte{
 	'y', 'z',
 }
 
-type MathBuildingBlock struct {
+type MathBlock struct {
 }
 
-func (m *MathBuildingBlock) Stages() []int {
+func (m *MathBlock) Stages() []int {
 	return []int{StageAlive}
 }
 
-func (m *MathBuildingBlock) Random(varCount, knobCount int) Gene {
+func (m *MathBlock) Random(varCount, knobCount int) Gene {
 	g := MathGene{randomOperator()}
 	cursor := CursorOperator
 	size := util.RandomNumber(knobCount, knobCount*2) // random value
