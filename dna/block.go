@@ -1,33 +1,33 @@
 package dna
 
 import (
-	"strconv"
-
-	"github.com/wmiller848/GoGP/util"
+	"errors"
+	"fmt"
+	"math"
 )
 
-func randomOperator() byte {
-	switch util.RandomNumber(0, 3) {
-	case 0:
-		return byte('+')
-	case 1:
-		return byte('-')
-	case 2:
-		return byte('*')
-	case 3:
-		return byte('/')
-	default:
-		return randomOperator()
-	}
-}
+//func randomOperator() byte {
+//switch util.RandomNumber(0, 3) {
+//case 0:
+//return byte('+')
+//case 1:
+//return byte('-')
+//case 2:
+//return byte('*')
+//case 3:
+//return byte('/')
+//default:
+//return randomOperator()
+//}
+//}
 
-func randomVariable() byte {
-	return byte(util.RandomNumber(0, 9))
-}
+//func randomVariable() byte {
+//return byte(util.RandomNumber(0, 9))
+//}
 
-func randomNumber() byte {
-	return byte(util.RandomNumber(0, 9))
-}
+//func randomNumber() byte {
+//return byte(util.RandomNumber(0, 9))
+//}
 
 //const (
 //StageSpawn  int = 1
@@ -36,45 +36,87 @@ func randomNumber() byte {
 //StageDead   int = 3
 //)
 
+//type Base interface {
+//Value() string
+//}
+
+type Base byte
+
+type BaseNode struct {
+	Children [2]*BaseNode
+	Depth    int
+}
+
+type Codon []byte
+
+var CodonStart Codon = Codon("<")
+var CodonStop Codon = Codon(">")
+
 type Block interface {
-	Random(int, int) Gene
+	Bases() [4]Base
+	Encoding() map[Base]map[Base]map[Base]Codon
+	Random() *DNA
 }
 
-func GetVariableBlock(j int) string {
-	tmpl := "$"
-	ji := j % len(blockVars)
-	if j != 0 && ji == 0 {
-		jd := j / len(blockVars)
-		for t := 0; t < jd; t++ {
-			tmpl += string(blockVars[t])
-		}
-	}
-	tmpl += string(blockVars[ji])
-	return tmpl
+type Block4x3 struct {
+	bases    [4]Base
+	encoding map[Base]map[Base]map[Base]Codon
 }
 
-func VarsTemplate(g Gene) string {
-	tmpl := ""
-	cursor := CursorNil
-	j := 0
-	for i, _ := range g.Clone() {
-		switch g.At(i) {
-		case byte('$'):
-			cursor = CursorVariable
-			tmpl += string(g.At(i))
-		case byte('a'), byte('b'), byte('c'), byte('d'), byte('e'), byte('f'), byte('g'), byte('h'), byte('i'), byte('j'), byte('k'), byte('l'), byte('m'), byte('n'), byte('o'), byte('p'), byte('q'), byte('r'), byte('s'), byte('t'), byte('u'), byte('v'), byte('w'), byte('x'), byte('y'), byte('z'):
-			if cursor == CursorVariable {
-				cursor = CursorVariable
-				tmpl += string(g.At(i))
-			}
-		default:
-			if cursor == CursorVariable {
-				cursor = CursorNil
-				tmpl += " = args[" + strconv.Itoa(j) + "];"
-				j++
+func NewBlock4x3(bases [4]Base, codexs []Codon) (*Block4x3, error) {
+	baseSize := int(math.Pow(4, 3))
+	if len(codexs) > baseSize-1 {
+		return nil, errors.New("Codexs can have a max of 63 items")
+	}
+	blk := &Block4x3{
+		bases:    bases,
+		encoding: make(map[Base]map[Base]map[Base]Codon),
+	}
+
+	dist := baseSize / len(codexs)
+	fmt.Println("Distribution is", dist)
+	fmt.Println("=== START ===")
+	i := 0
+	u := 0
+	cursor := codexs[u]
+	for _, b1 := range bases {
+		for _, b2 := range bases {
+			for _, b3 := range bases {
+				if blk.encoding[b1] == nil {
+					blk.encoding[b1] = make(map[Base]map[Base]Codon)
+				}
+				if blk.encoding[b1][b2] == nil {
+					blk.encoding[b1][b2] = make(map[Base]Codon)
+				}
+				blk.encoding[b1][b2][b3] = cursor
+				i++
+				if i%dist == 0 {
+					u++
+					if u > len(codexs)-1 {
+						u = 0
+					}
+					cursor = codexs[u]
+				}
 			}
 		}
 	}
+	// First is start and assigned value
+	// Last Encoding is always a stop
+	blk.encoding[bases[3]][bases[3]][bases[3]] = Codon(CodonStop)
+	fmt.Println(blk.encoding)
+	fmt.Println("=== STOP ===")
 
-	return tmpl
+	return blk, nil
+}
+
+func (b *Block4x3) Bases() [4]Base {
+	return b.bases
+}
+
+func (b *Block4x3) Encoding() map[Base]map[Base]map[Base]Codon {
+	return b.encoding
+}
+
+func (b *Block4x3) Random() *DNA {
+	return &DNA{}
 }

@@ -1,9 +1,17 @@
 package dna
 
-type Strand []byte
+import "github.com/wmiller848/GoGP/gene"
 
 type DNA struct {
-	StrandYing Strand
-	StrandYang Strand
+	StrandYing gene.GenericGene
+	StrandYang gene.GenericGene
 	Blocks     []Block
+}
+
+func (d *DNA) MarshalGenes() ([]gene.Gene, error) {
+	return []gene.Gene{}, nil
+}
+
+func (d *DNA) MarshalHelix() ([]byte, error) {
+	return []byte{}, nil
 }

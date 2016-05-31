@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/wmiller848/GoGP/gene"
 	"github.com/wmiller848/GoGP/program"
 	"github.com/wmiller848/GoGP/util"
 )
@@ -224,7 +223,7 @@ func (c *Context) InitPopulation(inputs, population int) {
 	var i int
 	for i = 0; i < population; i++ {
 		pgm := &ProgramInstance{
-			Program: program.New(inputs, inputs*4, &gene.MathBuildingBlock{}),
+			Program: program.New(inputs),
 			Energy:  100,
 			ID:      util.RandomHex(16),
 		}
