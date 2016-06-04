@@ -2,43 +2,11 @@ package dna
 
 import (
 	"errors"
-	"fmt"
 	"math"
+
+	"github.com/wmiller848/GoGP/gene"
+	"github.com/wmiller848/GoGP/util"
 )
-
-//func randomOperator() byte {
-//switch util.RandomNumber(0, 3) {
-//case 0:
-//return byte('+')
-//case 1:
-//return byte('-')
-//case 2:
-//return byte('*')
-//case 3:
-//return byte('/')
-//default:
-//return randomOperator()
-//}
-//}
-
-//func randomVariable() byte {
-//return byte(util.RandomNumber(0, 9))
-//}
-
-//func randomNumber() byte {
-//return byte(util.RandomNumber(0, 9))
-//}
-
-//const (
-//StageSpawn  int = 1
-//StageAlive  int = 2
-//StageDieing int = 3
-//StageDead   int = 3
-//)
-
-//type Base interface {
-//Value() string
-//}
 
 type Base byte
 
@@ -52,10 +20,28 @@ type Codon []byte
 var CodonStart Codon = Codon("<")
 var CodonStop Codon = Codon(">")
 
+type Codex []Codon
+
+func (c Codex) String() string {
+	str := ""
+	for _, codon := range c {
+		str += string(codon)
+	}
+	return str
+}
+
+type CodexGigas []Codex
+
+// func (c CodexGigas)  {
+//
+// }
+
 type Block interface {
 	Bases() [4]Base
 	Encoding() map[Base]map[Base]map[Base]Codon
 	Random() *DNA
+	Match(Base) Base
+	Decode([]Base) (Codon, error)
 }
 
 type Block4x3 struct {
@@ -74,8 +60,7 @@ func NewBlock4x3(bases [4]Base, codexs []Codon) (*Block4x3, error) {
 	}
 
 	dist := baseSize / len(codexs)
-	fmt.Println("Distribution is", dist)
-	fmt.Println("=== START ===")
+	// First Encoding Codon is start and assigned value
 	i := 0
 	u := 0
 	cursor := codexs[u]
@@ -100,12 +85,8 @@ func NewBlock4x3(bases [4]Base, codexs []Codon) (*Block4x3, error) {
 			}
 		}
 	}
-	// First is start and assigned value
-	// Last Encoding is always a stop
+	// Last Encoding Codon is always a stop
 	blk.encoding[bases[3]][bases[3]][bases[3]] = Codon(CodonStop)
-	fmt.Println(blk.encoding)
-	fmt.Println("=== STOP ===")
-
 	return blk, nil
 }
 
@@ -118,5 +99,44 @@ func (b *Block4x3) Encoding() map[Base]map[Base]map[Base]Codon {
 }
 
 func (b *Block4x3) Random() *DNA {
-	return &DNA{}
+	dna := &DNA{
+		StrandYing: gene.GenericGene{},
+		StrandYang: gene.GenericGene{},
+		Block:      b,
+	}
+
+	seedYing := int(util.RandomNumber(50, 200))
+	for i := 0; i < seedYing; i++ {
+		pick := byte(util.RandomNumber(0, 255))
+		dna.StrandYing = append(dna.StrandYing, pick)
+	}
+	seedYang := int(util.RandomNumber(50, 200))
+	for i := 0; i < seedYang; i++ {
+		pick := byte(util.RandomNumber(0, 255))
+		dna.StrandYang = append(dna.StrandYang, pick)
+	}
+	return dna
+}
+
+func (b *Block4x3) Match(frag Base) Base {
+	if frag >= b.bases[0] && frag < b.bases[1] {
+		return b.bases[0]
+	} else if frag >= b.bases[1] && frag < b.bases[2] {
+		return b.bases[1]
+	} else if frag >= b.bases[2] && frag < b.bases[3] {
+		return b.bases[2]
+	} else if frag >= b.bases[3] {
+		return b.bases[3]
+	}
+	return 0x00
+}
+
+func (b *Block4x3) Decode(strand []Base) (Codon, error) {
+	if len(strand) != 3 {
+		return nil, errors.New("Invalid strand size, must be 3 bytes")
+	}
+	c0 := b.Match(strand[0])
+	c1 := b.Match(strand[1])
+	c2 := b.Match(strand[2])
+	return b.encoding[c0][c1][c2], nil
 }

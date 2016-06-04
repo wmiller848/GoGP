@@ -1,7 +1,9 @@
 package program
 
 import (
+	"fmt"
 	"io/ioutil"
+	"reflect"
 	"strings"
 
 	"github.com/wmiller848/GoGP/dna"
@@ -25,13 +27,16 @@ type Program struct {
 //}
 //}
 
-func New(count int) *Program {
+func New(geneType reflect.Type, count int) *Program {
 	bases := [4]dna.Base{0x00, 0x40, 0x80, 0xc0}
 	codons := []dna.Codon{
-		dna.Codon(dna.CodonStop), dna.Codon("+"), dna.Codon("-"),
-		dna.Codon("*"), dna.Codon("/"), dna.Codon("#"),
+		dna.CodonStart, dna.Codon("+"), dna.Codon("-"),
+		dna.Codon("*"), dna.Codon("/"), dna.Codon("0"),
+		dna.Codon("1"), dna.Codon("2"), dna.Codon("3"),
+		dna.Codon("4"), dna.Codon("5"), dna.Codon("6"),
+		dna.Codon("7"), dna.Codon("8"), dna.Codon("9"),
 		dna.Codon("$a"), dna.Codon("$b"), dna.Codon("$c"),
-		dna.Codon("$d"),
+		dna.Codon("$d"), dna.Codon(","), dna.CodonStop,
 	}
 	blk, _ := dna.NewBlock4x3(bases, codons)
 	d := blk.Random()
@@ -44,12 +49,13 @@ func New(count int) *Program {
 }
 
 func (p *Program) Mate(mate *Program) *Program {
-	return New(4)
+	return New(reflect.TypeOf(gene.MathGene{}), 4)
 }
 
 func (p *Program) MarshalProgram() ([]byte, error) {
 	pgm := p.Template
 	gns, _ := p.DNA.MarshalGenes()
+	fmt.Println(gns)
 
 	//=====
 	// Coffee Path
@@ -65,18 +71,18 @@ func (p *Program) MarshalProgram() ([]byte, error) {
 	//=====
 	pgm = strings.Replace(pgm, "{{spawn}}", "", 1)
 
-	for i, _ := range gns {
-		//=====
-		// Vars
-		//=====
-		pgm = strings.Replace(pgm, "{{vars}}", gene.VarsTemplate(gns[i])+"\n{{vars}}", 1)
-		root, _ := gns[i].MarshalTree()
-		exp, _ := root.MarshalExpression()
-		//=====
-		// Alive
-		//=====
-		pgm = strings.Replace(pgm, "{{alive}}", string(exp)+"\n{{alive}}", 1)
-	}
+	// for i, _ := range gns {
+	//=====
+	// Vars
+	//=====
+	// pgm = strings.Replace(pgm, "{{vars}}", gene.VarsTemplate(gns[i])+"\n{{vars}}", 1)
+	// //=====
+	// // Alive
+	// //=====
+	// root, _ := gns[i].MarshalTree()
+	// exp, _ := root.MarshalExpression()
+	// pgm = strings.Replace(pgm, "{{alive}}", string(exp)+"\n{{alive}}", 1)
+	// }
 	pgm = strings.Replace(pgm, "{{vars}}", "", -1)
 	pgm = strings.Replace(pgm, "{{alive}}", "", -1)
 	//=====

@@ -8,10 +8,12 @@ import (
 	"math"
 	"os"
 	"os/exec"
+	"reflect"
 	"sort"
 	"strconv"
 	"time"
 
+	"github.com/wmiller848/GoGP/gene"
 	"github.com/wmiller848/GoGP/program"
 	"github.com/wmiller848/GoGP/util"
 )
@@ -100,12 +102,13 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 		stdinBuffer := NewBuffer()
 		var stdinTap chan []byte
 		cmd.Stdin, stdinTap = stdinBuffer.Pipe(fountain[i])
-		open := true
 		var data []byte
 		var assert []float64
-		for open == true {
-			var d []byte
-			d, open = <-stdinTap
+		for {
+			d, open := <-stdinTap
+			if open == false {
+				break
+			}
 			data = append(data, d...)
 			lines := bytes.Split(data, []byte("\n"))
 			data = []byte{}
@@ -139,12 +142,13 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 		}
 
 		stdoutTap := stdoutBuffer.Tap()
-		open = true
 		data = []byte{}
 		output := []float64{}
-		for open == true {
-			var d []byte
-			d, open = <-stdoutTap
+		for {
+			d, open := <-stdoutTap
+			if open == false {
+				break
+			}
 			data = append(data, d...)
 		}
 		lines := bytes.Split(data, []byte("\n"))
@@ -170,7 +174,7 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 			scores = append(scores, score)
 			fmt.Println("Score - ", score.Score)
 		} else {
-			fmt.Println("Program provided incorect amount of outputs")
+			fmt.Println("Program provided incorrect amount of outputs, terminating DNA")
 		}
 	}
 
@@ -223,10 +227,11 @@ func (c *Context) InitPopulation(inputs, population int) {
 	var i int
 	for i = 0; i < population; i++ {
 		pgm := &ProgramInstance{
-			Program: program.New(inputs),
+			Program: program.New(reflect.TypeOf(gene.MathGene{}), inputs),
 			Energy:  100,
 			ID:      util.RandomHex(16),
 		}
+		fmt.Println(pgm.Program.DNA.StrandYing, pgm.Program.DNA.StrandYang)
 		c.Programs[i] = pgm
 	}
 }
