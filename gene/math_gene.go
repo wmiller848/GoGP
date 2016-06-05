@@ -1,6 +1,9 @@
 package gene
 
-import "strconv"
+import (
+	_ "fmt"
+	"strconv"
+)
 
 var blockVars []byte = []byte{
 	'a', 'b', 'c', 'd', 'e', 'f',
@@ -124,9 +127,18 @@ func (g MathGene) At(i int) byte {
 
 func (g MathGene) Heal() []byte {
 	for {
+		valid := false
 		clean := true
 		g = g.Clone()
 		for i, _ := range g {
+			switch g[i] {
+			case byte('$'), byte('a'), byte('b'), byte('c'), byte('d'), byte('e'), byte('f'), byte('g'), byte('h'), byte('i'), byte('j'), byte('k'), byte('l'), byte('m'), byte('n'), byte('o'), byte('p'), byte('q'), byte('r'), byte('s'), byte('t'), byte('u'), byte('v'), byte('w'), byte('x'), byte('y'), byte('z'), byte('0'), byte('1'), byte('2'), byte('3'), byte('4'), byte('5'), byte('6'), byte('7'), byte('8'), byte('9'), byte(','), byte('{'), byte('}'):
+				if valid == false {
+					g[i] = 0x00
+				}
+			default:
+				valid = true
+			}
 			lx := g.LastChrome(i)
 			if lx >= 0 && g[i] != 0x00 {
 				switch g[lx] {

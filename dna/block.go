@@ -8,6 +8,9 @@ import (
 	"github.com/wmiller848/GoGP/util"
 )
 
+const SeedBase int = 50
+const SeedMax int = 500
+
 type Base byte
 
 type BaseNode struct {
@@ -31,6 +34,10 @@ func (c Codex) String() string {
 }
 
 type CodexGigas []Codex
+
+// type CodexTitas []CodexGigas
+// func (c CodexGigas) Len() int  { return len(c) }
+// func (c CodexGigas) Less(i, j int) int { return c[i] }
 
 // func (c CodexGigas)  {
 //
@@ -86,7 +93,7 @@ func NewBlock4x3(bases [4]Base, codexs []Codon) (*Block4x3, error) {
 		}
 	}
 	// Last Encoding Codon is always a stop
-	blk.encoding[bases[3]][bases[3]][bases[3]] = Codon(CodonStop)
+	// blk.encoding[bases[3]][bases[3]][bases[3]] = Codon(CodonStop)
 	return blk, nil
 }
 
@@ -105,12 +112,12 @@ func (b *Block4x3) Random() *DNA {
 		Block:      b,
 	}
 
-	seedYing := int(util.RandomNumber(50, 200))
+	seedYing := int(util.RandomNumber(SeedBase, SeedMax))
 	for i := 0; i < seedYing; i++ {
 		pick := byte(util.RandomNumber(0, 255))
 		dna.StrandYing = append(dna.StrandYing, pick)
 	}
-	seedYang := int(util.RandomNumber(50, 200))
+	seedYang := int(util.RandomNumber(SeedBase, SeedMax))
 	for i := 0; i < seedYang; i++ {
 		pick := byte(util.RandomNumber(0, 255))
 		dna.StrandYang = append(dna.StrandYang, pick)

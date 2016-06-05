@@ -1,6 +1,7 @@
 package program
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"reflect"
@@ -55,8 +56,13 @@ func (p *Program) Mate(mate *Program) *Program {
 func (p *Program) MarshalProgram() ([]byte, error) {
 	pgm := p.Template
 	gns, _ := p.DNA.MarshalGenes()
-	fmt.Println(gns)
+	mathGns := gene.MathGene(gns)
+	mathGns = mathGns.Heal()
+	fmt.Println(string(gns), string(mathGns.Heal()))
 
+	if len(mathGns) == 0 {
+		return nil, errors.New("DNA contains no genes")
+	}
 	//=====
 	// Coffee Path
 	//=====
@@ -70,21 +76,16 @@ func (p *Program) MarshalProgram() ([]byte, error) {
 	// Spawn
 	//=====
 	pgm = strings.Replace(pgm, "{{spawn}}", "", 1)
-
-	// for i, _ := range gns {
-	//=====
+	// =====
 	// Vars
+	// =====
+	pgm = strings.Replace(pgm, "{{vars}}", gene.VarsTemplate(mathGns), 1)
 	//=====
-	// pgm = strings.Replace(pgm, "{{vars}}", gene.VarsTemplate(gns[i])+"\n{{vars}}", 1)
-	// //=====
-	// // Alive
-	// //=====
-	// root, _ := gns[i].MarshalTree()
-	// exp, _ := root.MarshalExpression()
-	// pgm = strings.Replace(pgm, "{{alive}}", string(exp)+"\n{{alive}}", 1)
-	// }
-	pgm = strings.Replace(pgm, "{{vars}}", "", -1)
-	pgm = strings.Replace(pgm, "{{alive}}", "", -1)
+	// Alive
+	//=====
+	root, _ := mathGns.MarshalTree()
+	exp, _ := root.MarshalExpression()
+	pgm = strings.Replace(pgm, "{{alive}}", string(exp), 1)
 	//=====
 	// Dieing
 	//=====
