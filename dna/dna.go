@@ -82,6 +82,7 @@ type DNA struct {
 func (d *DNA) Unwind(strand gene.GenericGene) CodexGigas {
 	leng := len(strand)
 	codexGigas := CodexGigas{}
+	// TODO 3 should be block size
 	for i := 0; i < 3; i++ {
 		codex := Codex{}
 		for j := 0; j < leng; j += 3 {

@@ -2,7 +2,7 @@ package program
 
 import (
 	"errors"
-	"fmt"
+	_ "fmt"
 	"io/ioutil"
 	"reflect"
 	"strings"
@@ -58,7 +58,6 @@ func (p *Program) MarshalProgram() ([]byte, error) {
 	gns, _ := p.DNA.MarshalGenes()
 	mathGns := gene.MathGene(gns)
 	mathGns = mathGns.Heal()
-	fmt.Println(string(gns), string(mathGns.Heal()))
 
 	if len(mathGns) == 0 {
 		return nil, errors.New("DNA contains no genes")
