@@ -4,7 +4,6 @@ import (
 	"errors"
 	_ "fmt"
 	"io/ioutil"
-	"reflect"
 	"strings"
 
 	"github.com/wmiller848/GoGP/dna"
@@ -13,9 +12,10 @@ import (
 )
 
 type Program struct {
-	Block    dna.Block
-	DNA      *dna.DNA
-	Template string
+	InputCount int
+	Block      dna.Block
+	DNA        *dna.DNA
+	Template   string
 }
 
 //func New(varCount, knobCount int, block gene.BuildingBlock) *Program {
@@ -28,29 +28,34 @@ type Program struct {
 //}
 //}
 
-func New(geneType reflect.Type, count int) *Program {
+func New(count int) *Program {
 	bases := [4]dna.Base{0x00, 0x40, 0x80, 0xc0}
 	codons := []dna.Codon{
-		dna.CodonStart, dna.Codon("+"), dna.Codon("-"),
+		dna.Codon("+"), dna.Codon("-"),
 		dna.Codon("*"), dna.Codon("/"), dna.Codon("0"),
 		dna.Codon("1"), dna.Codon("2"), dna.Codon("3"),
 		dna.Codon("4"), dna.Codon("5"), dna.Codon("6"),
 		dna.Codon("7"), dna.Codon("8"), dna.Codon("9"),
-		dna.Codon("$a"), dna.Codon("$b"), dna.Codon("$c"),
-		dna.Codon("$d"), dna.Codon(","), dna.CodonStop,
+		dna.Codon(","),
+	}
+	for i := 0; i < count; i++ {
+		codons = append(codons, dna.Codon(gene.Variable(i)))
 	}
 	blk, _ := dna.NewBlock4x3(bases, codons)
 	d := blk.Random()
 	tplBytes, _ := ioutil.ReadFile("./program/main.coffee")
 	return &Program{
-		Block:    blk,
-		DNA:      d,
-		Template: string(tplBytes),
+		InputCount: count,
+		Block:      blk,
+		DNA:        d,
+		Template:   string(tplBytes),
 	}
 }
 
-func (p *Program) Mate(mate *Program) *Program {
-	return New(reflect.TypeOf(gene.MathGene{}), 4)
+func (p *Program) Mutate() *Program {
+	pgm := New(p.InputCount)
+	pgm.DNA = p.DNA.Mutate()
+	return pgm
 }
 
 func (p *Program) MarshalProgram() ([]byte, error) {
@@ -78,7 +83,7 @@ func (p *Program) MarshalProgram() ([]byte, error) {
 	// =====
 	// Vars
 	// =====
-	pgm = strings.Replace(pgm, "{{vars}}", gene.VarsTemplate(mathGns), 1)
+	pgm = strings.Replace(pgm, "{{vars}}", gene.VariableTemplate(mathGns), 1)
 	//=====
 	// Alive
 	//=====

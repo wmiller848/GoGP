@@ -79,6 +79,20 @@ type DNA struct {
 	Block      Block
 }
 
+func (d *DNA) Mutate() *DNA {
+	dna := &DNA{
+		StrandYing: d.StrandYing,
+		StrandYang: d.StrandYang,
+		Block:      d.Block,
+	}
+	c := int(util.RandomNumber(0, 10))
+	for i := 0; i < c; i++ {
+		pick := util.RandomNumber(0, len(d.StrandYing)-1)
+		dna.StrandYing[pick] = dna.StrandYing[pick] ^ byte(util.RandomNumber(0, 255))
+	}
+	return dna
+}
+
 func (d *DNA) Unwind(strand gene.GenericGene) CodexGigas {
 	leng := len(strand)
 	codexGigas := CodexGigas{}

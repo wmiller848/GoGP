@@ -58,8 +58,8 @@ type Block4x3 struct {
 
 func NewBlock4x3(bases [4]Base, codexs []Codon) (*Block4x3, error) {
 	baseSize := int(math.Pow(4, 3))
-	if len(codexs) > baseSize-1 {
-		return nil, errors.New("Codexs can have a max of 63 items")
+	if len(codexs) > baseSize-2 {
+		return nil, errors.New("Codexs can have a max of 62 items")
 	}
 	blk := &Block4x3{
 		bases:    bases,
@@ -67,10 +67,13 @@ func NewBlock4x3(bases [4]Base, codexs []Codon) (*Block4x3, error) {
 	}
 
 	dist := baseSize / len(codexs)
-	// First Encoding Codon is start and assigned value
 	i := 0
 	u := 0
-	cursor := codexs[u]
+	// First Encoding Codon is start
+	codexPool := append([]Codon{CodonStart}, codexs...)
+	// Last Encoding Codon is stop
+	codexPool = append(codexPool, CodonStop)
+	cursor := codexPool[u]
 	for _, b1 := range bases {
 		for _, b2 := range bases {
 			for _, b3 := range bases {
@@ -84,16 +87,14 @@ func NewBlock4x3(bases [4]Base, codexs []Codon) (*Block4x3, error) {
 				i++
 				if i%dist == 0 {
 					u++
-					if u > len(codexs)-1 {
+					if u > len(codexPool)-1 {
 						u = 0
 					}
-					cursor = codexs[u]
+					cursor = codexPool[u]
 				}
 			}
 		}
 	}
-	// Last Encoding Codon is always a stop
-	// blk.encoding[bases[3]][bases[3]][bases[3]] = Codon(CodonStop)
 	return blk, nil
 }
 

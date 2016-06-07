@@ -8,12 +8,11 @@ import (
 	"math"
 	"os"
 	"os/exec"
-	"reflect"
 	"sort"
 	"strconv"
 	"time"
 
-	"github.com/wmiller848/GoGP/gene"
+	_ "github.com/wmiller848/GoGP/gene"
 	"github.com/wmiller848/GoGP/program"
 	"github.com/wmiller848/GoGP/util"
 )
@@ -99,6 +98,7 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 		stdoutBuffer := NewBuffer()
 		cmd.Stdout = stdoutBuffer
 		//
+		// Parse out the asserted correct value from the data stream
 		stdinBuffer := NewBuffer()
 		var stdinTap chan []byte
 		cmd.Stdin, stdinTap = stdinBuffer.Pipe(fountain[i])
@@ -197,12 +197,12 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 
 	if len(parents) > 1 {
 		for i, _ := range parents {
-			mate := i
-			for mate != i {
-				mate = int(util.RandomNumber(0, len(parents)-1))
-			}
+			// mate := i
+			// for mate != i {
+			// 	mate = int(util.RandomNumber(0, len(parents)-1))
+			// }
 			pgm := &ProgramInstance{
-				Program: parents[i].Mate(parents[mate].Program),
+				Program: parents[i].Mutate(),
 				Energy:  100,
 				ID:      util.RandomHex(16),
 			}
@@ -227,7 +227,7 @@ func (c *Context) InitPopulation(inputs, population int) {
 	var i int
 	for i = 0; i < population; i++ {
 		pgm := &ProgramInstance{
-			Program: program.New(reflect.TypeOf(gene.MathGene{}), inputs),
+			Program: program.New(inputs),
 			Energy:  100,
 			ID:      util.RandomHex(16),
 		}
