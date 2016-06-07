@@ -6,19 +6,18 @@ import (
 )
 
 const (
-	CursorNil       int = 0
-	CursorVariable  int = 1
-	CursorNumber    int = 2
-	CursorOperator  int = 3
-	CursorSeparator int = 4
+	CursorNil           int = 0
+	CursorVariable      int = 1
+	CursorVariableStart int = 2
+	CursorNumber        int = 3
+	CursorOperator      int = 4
+	CursorSeparator     int = 5
 )
 
 type Gene interface {
 	Eq(Gene) bool
 	Clone() []byte
 	Heal() []byte
-	LastChrome(int) int
-	NextChrome(int) int
 	Len() int
 	At(int) byte
 	MarshalTree() (*GeneNode, error)
@@ -47,38 +46,10 @@ func Variable(j int) string {
 	return tmpl
 }
 
-func VariableTemplate(g Gene) string {
-	vars := make(map[string]string)
+func VariableTemplate(count int) string {
 	tmpl := ""
-	cursor := CursorNil
-	j := 0
-	for i, _ := range g.Clone() {
-		switch g.At(i) {
-		case byte('$'):
-			if tmpl != "" && vars[tmpl] == "" {
-				vars[tmpl] = tmpl + " = args[" + strconv.Itoa(j) + "];"
-				j++
-			}
-			tmpl = string(g.At(i))
-			cursor = CursorVariable
-		case byte('a'), byte('b'), byte('c'), byte('d'), byte('e'), byte('f'), byte('g'), byte('h'), byte('i'), byte('j'), byte('k'), byte('l'), byte('m'), byte('n'), byte('o'), byte('p'), byte('q'), byte('r'), byte('s'), byte('t'), byte('u'), byte('v'), byte('w'), byte('x'), byte('y'), byte('z'):
-			tmpl += string(g.At(i))
-			cursor = CursorVariable
-		default:
-			if cursor == CursorVariable && vars[tmpl] == "" {
-				vars[tmpl] = tmpl + " = args[" + strconv.Itoa(j) + "];"
-				j++
-			}
-			cursor = CursorNil
-		}
-	}
-	if tmpl != "" && vars[tmpl] == "" {
-		vars[tmpl] = tmpl + " = args[" + strconv.Itoa(j) + "];"
-	}
-
-	tmpl = ""
-	for _, val := range vars {
-		tmpl += val
+	for i := 0; i < count; i++ {
+		tmpl += Variable(i) + " = args[" + strconv.Itoa(i) + "];"
 	}
 	return tmpl
 }
