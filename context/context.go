@@ -38,7 +38,8 @@ func (s Scores) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s Scores) Less(i, j int) bool { return s[i].Score < s[j].Score }
 
 type Context struct {
-	Programs []*ProgramInstance
+	Population int
+	Programs   []*ProgramInstance
 }
 
 func New() *Context {
@@ -65,13 +66,16 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generat
 	os.Mkdir("./out/generations/"+util.Hex(sha), 0777)
 	c.InitPopulation(inputs, population)
 	var i int
+	time.Sleep(500 * time.Millisecond)
+	fountain := Multiplex(pipe)
 	for i = 0; i < generations; i++ {
-		c.EvalInline(pipe, i, inputs, sha)
+		c.EvalInline(fountain, i, inputs, sha)
 	}
+	fountain.Destroy()
 	return c.Fitest()
 }
 
-func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte) {
+func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid []byte) {
 	path := "./out/generations/" + util.Hex(uuid) + "/" + strconv.Itoa(generation)
 	os.Mkdir(path, 0777)
 	//	Each program in population ->
@@ -85,9 +89,6 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 	//		* Each testBuf row ->
 	//			* compute average score
 	scores := Scores{}
-	fountain := Multiplex(pipe)
-	// HACK HACK waiting for IO
-	time.Sleep(100 * time.Millisecond)
 	for i, _ := range c.Programs {
 		if c.Programs[i].Energy < 0 {
 			continue
@@ -104,14 +105,17 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 		// Parse out the asserted correct value from the data stream
 		stdinBuffer := NewBuffer()
 		var stdinTap chan []byte
-		cmd.Stdin, stdinTap = stdinBuffer.Pipe(fountain.Multiplex())
+		pipe := fountain.Multiplex()
+		cmd.Stdin, stdinTap = stdinBuffer.Pipe(pipe)
 		var data []byte
 		var assert []float64
 		for {
 			d, open := <-stdinTap
 			if open == false {
+				fmt.Println("FUCK ME")
 				break
 			}
+			fmt.Println("YAY")
 			data = append(data, d...)
 			lines := bytes.Split(data, []byte("\n"))
 			data = []byte{}
@@ -130,7 +134,7 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 		//
 		//
 		prgmBytes, _ := prgm.MarshalProgram()
-		fmt.Println(i, "Command - '"+cmdStr+"'")
+		fmt.Println(generation, i, "Command - '"+cmdStr+"'")
 		err := ioutil.WriteFile(path+"/"+prgm.ID, prgmBytes, 0555)
 		if err != nil {
 			fmt.Println(err.Error())
@@ -145,13 +149,16 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 		}
 
 		stdoutTap := stdoutBuffer.Tap()
+		stdoutBuffer.Close()
 		data = []byte{}
 		output := []float64{}
 		for {
 			d, open := <-stdoutTap
 			if open == false {
+				fmt.Println("IN THE ASS")
 				break
 			}
+			//fmt.Println("HAPPY")
 			data = append(data, d...)
 		}
 		lines := bytes.Split(data, []byte("\n"))
@@ -164,8 +171,8 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 			}
 		}
 		// Compair output to assert
-		if len(assert) == len(output) {
-			fmt.Println(assert, output)
+		fmt.Println(len(assert), len(output))
+		if len(assert) == len(output) && len(assert) > 0 {
 			avgScore := 0.0
 			for i, _ := range assert {
 				diff := output[i] - assert[i]
@@ -179,6 +186,7 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 			fmt.Println("Score - ", score.Score)
 		} else {
 			fmt.Println("Program provided incorrect amount of outputs, terminating DNA")
+			prgm.Energy = -1000
 		}
 	}
 
@@ -199,10 +207,10 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 		}
 	}
 
-	if len(parents) > 1 {
-		for i, _ := range parents {
+	if len(parents) > 0 {
+		for i := 0; i < c.Population-len(parents); i++ {
 			pgm := &ProgramInstance{
-				Program: parents[i].Mutate(),
+				Program: parents[i%len(parents)].Mutate(),
 				Energy:  100,
 				ID:      util.RandomHex(16),
 			}
@@ -217,6 +225,7 @@ func (c *Context) Fitest() *program.Program {
 }
 
 func (c *Context) InitPopulation(inputs, population int) {
+	c.Population = population
 	c.Programs = make([]*ProgramInstance, population)
 	var i int
 	for i = 0; i < population; i++ {
@@ -225,7 +234,6 @@ func (c *Context) InitPopulation(inputs, population int) {
 			Energy:  100,
 			ID:      util.RandomHex(16),
 		}
-		fmt.Println(pgm.Program.DNA.StrandYing, pgm.Program.DNA.StrandYang)
 		c.Programs[i] = pgm
 	}
 }
