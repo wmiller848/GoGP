@@ -85,10 +85,13 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 	//		* Each testBuf row ->
 	//			* compute average score
 	scores := Scores{}
-	fountain := Multiplex(pipe, len(c.Programs))
+	fountain := Multiplex(pipe)
 	// HACK HACK waiting for IO
 	time.Sleep(100 * time.Millisecond)
 	for i, _ := range c.Programs {
+		if c.Programs[i].Energy < 0 {
+			continue
+		}
 		prgm := c.Programs[i]
 		prgm.Energy -= 1
 		cmdStr := path + "/" + prgm.ID
@@ -101,7 +104,7 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 		// Parse out the asserted correct value from the data stream
 		stdinBuffer := NewBuffer()
 		var stdinTap chan []byte
-		cmd.Stdin, stdinTap = stdinBuffer.Pipe(fountain[i])
+		cmd.Stdin, stdinTap = stdinBuffer.Pipe(fountain.Multiplex())
 		var data []byte
 		var assert []float64
 		for {
@@ -162,6 +165,7 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 		}
 		// Compair output to assert
 		if len(assert) == len(output) {
+			fmt.Println(assert, output)
 			avgScore := 0.0
 			for i, _ := range assert {
 				diff := output[i] - assert[i]
@@ -197,10 +201,6 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 
 	if len(parents) > 1 {
 		for i, _ := range parents {
-			// mate := i
-			// for mate != i {
-			// 	mate = int(util.RandomNumber(0, len(parents)-1))
-			// }
 			pgm := &ProgramInstance{
 				Program: parents[i].Mutate(),
 				Energy:  100,
@@ -209,13 +209,7 @@ func (c *Context) EvalInline(pipe io.Reader, generation, inputs int, uuid []byte
 			children = append(children, pgm)
 		}
 	}
-
-	fmt.Println(parents, children)
-
-	//	Each program in population ->
-	//		* If energy <= 0
-	//			* dead
-	//	Get population - dead
+	c.Programs = append(parents, children...)
 }
 
 func (c *Context) Fitest() *program.Program {

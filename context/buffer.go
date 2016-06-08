@@ -1,21 +1,33 @@
 package context
 
 import (
+	_ "fmt"
 	"io"
 	"sync"
 )
 
 func NewBuffer() *Buffer {
 	return &Buffer{
-		open: true,
-		data: []byte{},
+		open:     true,
+		data:     []byte{},
+		buffered: make(map[*[]byte]int),
 	}
 }
 
 type Buffer struct {
 	sync.Mutex
-	open bool
-	data []byte
+	cache    bool
+	open     bool
+	data     []byte
+	buffered map[*[]byte]int
+}
+
+func (b *Buffer) Clone() *Buffer {
+	return &Buffer{
+		open:     true,
+		data:     []byte(b.data),
+		buffered: make(map[*[]byte]int),
+	}
 }
 
 func (b *Buffer) Open() {
@@ -29,6 +41,7 @@ func (b *Buffer) Read(data []byte) (int, error) {
 	b.Lock()
 	bleng := len(b.data)
 	dleng := len(data)
+	index := b.buffered[&data]
 	if b.open == true || bleng > 0 {
 		var leng int
 		if dleng > bleng {
@@ -36,9 +49,15 @@ func (b *Buffer) Read(data []byte) (int, error) {
 		} else {
 			leng = dleng
 		}
-		if leng > 0 {
-			copy(data, b.data[:leng])
-			b.data = b.data[leng:]
+		if leng > 0 && index < leng {
+			copy(data, b.data[index:index+leng])
+			if !b.cache {
+				b.data = b.data[leng:]
+			} else {
+				b.buffered[&data] += leng
+			}
+		} else if index > leng && b.open == false {
+			return 0, io.EOF
 		}
 		b.Unlock()
 		return leng, nil
@@ -100,25 +119,45 @@ func (b *Buffer) Tap() chan []byte {
 	return tap
 }
 
-func Multiplex(r io.Reader, size int) map[int]*Buffer {
-	p := make(map[int]*Buffer)
-	for i := 0; i < size; i++ {
-		p[i] = NewBuffer()
+type Multiplexer struct {
+	well *Buffer
+}
+
+func Multiplex(r io.Reader) *Multiplexer {
+	m := &Multiplexer{
+		well: NewBuffer(),
 	}
+	m.well.cache = true
 	go func() {
 		for {
 			data := make([]byte, 1024)
 			leng, err := r.Read(data)
 			if err == io.EOF {
-				for i := 0; i < size; i++ {
-					p[i].Close()
-				}
+				m.well.Close()
 				return
 			}
 			if leng > 0 {
-				for i := 0; i < size; i++ {
-					p[i].Write(data)
-				}
+				m.well.Write(data)
+			} else {
+				return
+			}
+		}
+	}()
+	return m
+}
+
+func (m *Multiplexer) Multiplex() *Buffer {
+	p := NewBuffer()
+	go func() {
+		data := make([]byte, 1024)
+		for {
+			leng, err := m.well.Read(data)
+			if err == io.EOF {
+				p.Close()
+				return
+			}
+			if leng > 0 {
+				p.Write(data)
 			} else {
 				return
 			}
