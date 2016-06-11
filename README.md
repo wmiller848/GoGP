@@ -1,17 +1,52 @@
 # GoGP #
 ### Go Genetic Programing ###
 
+## Usage ##
+
+`go get github.com/wmiller848/GoGP`
+
+`GoGP learn -c 4 -p 20 -g 10 < some.dat`
+
+`-c` is the number of columns in the input data
+that should be learned.
+
+`-p` is the running population to keep around.
+
+`-g` is the number of generations to iterate.
+
+
+The contents of `some.dat` looks like this:
+
+```
+1.0 3.1 5.2 1.0 1000
+3.1 5.2 1.8 2.3 2000
+```
+
+The last column in each row is the desired output, meaning
+GoGP will evolve a program that given the input `1.0 3.1 5.2 1.0`
+will output `1000`.
+
+This will output the contents of a [CoffeScript](https://github.com/jashkenas/coffeescript) program that evolved to match the input and desired output.
+
 ## About ##
 
 GoGP is a DNA inspired genetic programmer.
 
 What does that mean? Lets break it down:
 
+### Initialization ###
+
 GoGP is heavly inspired by nature, namely natural
 selection mixed with random mutation. At the start
-of a new learning session.
+of a new learning session the specifed population
+size is generated. Each new program in this population
+is defined by its `DNA`. `DNA` is defined as `[]byte`,
+the first generation programs just have random bytes
+for their `DNA`.
 
-## Usage ##
+### DNA ###
+
+So `DNA` is a `[]byte`, but how does it work?
 
 ## Legal Foo and Licences ##
 
