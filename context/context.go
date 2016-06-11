@@ -21,9 +21,7 @@ type ScoreFunction func(int) int
 
 type ProgramInstance struct {
 	*program.Program
-	Energy int
-	Stage  int
-	ID     string
+	ID string
 }
 
 type ProgramScore struct {
@@ -78,23 +76,13 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generat
 func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid []byte) {
 	path := "./out/generations/" + util.Hex(uuid) + "/" + strconv.Itoa(generation)
 	os.Mkdir(path, 0777)
-	//	Each program in population ->
-	//		* Apply 'life' ->
-	//			* Drain Energy
-	for i, _ := range c.Programs {
-		prgm := c.Programs[i]
-		prgm.Energy -= 10
-	}
 
 	//		* Each testBuf row ->
 	//			* compute average score
 	scores := Scores{}
+	genScore := 0.0
 	for i, _ := range c.Programs {
-		if c.Programs[i].Energy < 0 {
-			continue
-		}
 		prgm := c.Programs[i]
-		prgm.Energy -= 1
 		cmdStr := path + "/" + prgm.ID
 		cmd := exec.Command("coffee", cmdStr)
 		//
@@ -109,25 +97,30 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 		cmd.Stdin, stdinTap = stdinBuffer.Pipe(pipe)
 		var data []byte
 		var assert []float64
+		// TODO :: get io streaming to work
 		for {
 			d, open := <-stdinTap
 			if open == false {
-				fmt.Println("FUCK ME")
 				break
 			}
-			fmt.Println("YAY")
 			data = append(data, d...)
-			lines := bytes.Split(data, []byte("\n"))
-			data = []byte{}
-			for i, _ := range lines {
+		}
+		lines := bytes.Split(data, []byte("\n"))
+		for i, _ := range lines {
+			//for j, _ := range lines {
+			//if i != j && string(lines[i]) == string(lines[j]) {
+			////fmt.Println("FOUND SAME!", i, j, string(lines[i]), string(lines[j]))
+			//}
+			//}
+			//fmt.Printf("%v", string(lines[i])+"\n")
+			if len(lines[i]) > 0 {
 				nums := bytes.Split(lines[i], []byte(" "))
-				if len(nums) == inputs+1 && len(nums[inputs]) != 0 {
+				//fmt.Println(nums)
+				if len(nums) >= inputs {
 					num, err := strconv.ParseFloat(string(nums[inputs]), 64)
 					if err == nil {
 						assert = append(assert, num)
 					}
-				} else {
-					data = append(data, lines[i]...)
 				}
 			}
 		}
@@ -155,13 +148,11 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 		for {
 			d, open := <-stdoutTap
 			if open == false {
-				fmt.Println("IN THE ASS")
 				break
 			}
-			//fmt.Println("HAPPY")
 			data = append(data, d...)
 		}
-		lines := bytes.Split(data, []byte("\n"))
+		lines = bytes.Split(data, []byte("\n"))
 		for i, _ := range lines {
 			num, err := strconv.ParseFloat(string(lines[i]), 64)
 			if err == nil {
@@ -182,27 +173,23 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 				Index: i,
 				Score: math.Abs(avgScore / float64(len(assert))),
 			}
+			genScore += score.Score
 			scores = append(scores, score)
 			fmt.Println("Score - ", score.Score)
 		} else {
 			fmt.Println("Program provided incorrect amount of outputs, terminating DNA")
-			prgm.Energy = -1000
 		}
 	}
+	genScore /= float64(len(scores))
+	fmt.Println("Generation Score -", genScore)
 
-	//	Each in top 30% ->
-	//		* Add Energy
-	//		* Cross with other top 30%
 	sort.Sort(scores)
+	// Top 30%
 	limit := len(scores) / 3
 	parents := []*ProgramInstance{}
 	children := []*ProgramInstance{}
 	for i, _ := range scores {
 		if i < limit {
-			c.Programs[scores[i].Index].Energy += 20
-			if c.Programs[scores[i].Index].Energy > 100 {
-				c.Programs[scores[i].Index].Energy = 100
-			}
 			parents = append(parents, c.Programs[scores[i].Index])
 		}
 	}
@@ -211,7 +198,6 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 		for i := 0; i < c.Population-len(parents); i++ {
 			pgm := &ProgramInstance{
 				Program: parents[i%len(parents)].Mutate(),
-				Energy:  100,
 				ID:      util.RandomHex(16),
 			}
 			children = append(children, pgm)
@@ -231,7 +217,6 @@ func (c *Context) InitPopulation(inputs, population int) {
 	for i = 0; i < population; i++ {
 		pgm := &ProgramInstance{
 			Program: program.New(inputs),
-			Energy:  100,
 			ID:      util.RandomHex(16),
 		}
 		c.Programs[i] = pgm

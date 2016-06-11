@@ -2,9 +2,10 @@ package dna
 
 import (
 	"fmt"
+	_ "sort"
+
 	"github.com/wmiller848/GoGP/gene"
 	"github.com/wmiller848/GoGP/util"
-	_ "sort"
 )
 
 type Sequence struct {
@@ -85,11 +86,50 @@ func (d *DNA) Mutate() *DNA {
 		StrandYang: d.StrandYang,
 		Block:      d.Block,
 	}
-	c := int(util.RandomNumber(0, 10))
-	for i := 0; i < c; i++ {
-		pick := util.RandomNumber(0, len(d.StrandYing)-1)
-		dna.StrandYing[pick] = dna.StrandYing[pick] ^ byte(util.RandomNumber(0, 255))
+	// Ying
+	strandYing := gene.GenericGene{}
+	for i, _ := range dna.StrandYing {
+		codon := dna.StrandYing[i]
+		switch util.RandomNumber(0, 9) {
+		// Mutate codon
+		case 0:
+			codon = codon ^ byte(util.RandomNumber(0, 255))
+			strandYing = append(strandYing, codon)
+		// Omit codon
+		case 1:
+		// Add extra
+		case 2:
+			strandYing = append(strandYing, codon)
+			strandYing = append(strandYing, byte(util.RandomNumber(0, 255)))
+		// No Op
+		default:
+			strandYing = append(strandYing, codon)
+		}
 	}
+	dna.StrandYing = strandYing
+
+	// Yang
+	strandYang := gene.GenericGene{}
+	for i, _ := range dna.StrandYang {
+		codon := dna.StrandYang[i]
+		switch util.RandomNumber(0, 9) {
+		// Mutate codon
+		case 0:
+			codon = codon ^ byte(util.RandomNumber(0, 255))
+			strandYang = append(strandYang, codon)
+		// Omit codon
+		case 1:
+		// Add extra
+		case 2:
+			strandYang = append(strandYang, codon)
+			strandYang = append(strandYang, byte(util.RandomNumber(0, 255)))
+		// No Op
+		default:
+			strandYang = append(strandYang, codon)
+		}
+	}
+	dna.StrandYang = strandYang
+
 	return dna
 }
 

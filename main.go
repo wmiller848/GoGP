@@ -13,10 +13,8 @@ func score(output int) int {
 	return 0
 }
 
-func run(pipe io.Reader, inputs int) {
+func run(pipe io.Reader, inputs, population, generations int) {
 	ctx := context.New()
-	population := 1
-	generations := 2
 	fmt.Println("Learning from population of", population, "over", generations, "generations for", inputs, "inputs")
 	ctx.RunWithInlineScore(pipe, inputs, population, generations)
 }
@@ -34,36 +32,33 @@ func main() {
 					Name:   "count, c",
 					Usage:  "Number of input fields to learn",
 					EnvVar: "GOGP_COUNT",
+					Value:  0,
+				},
+				cli.IntFlag{
+					Name:   "population, p",
+					Usage:  "Number of programs to keep in the pool",
+					EnvVar: "GOGP_POPULATION",
+					Value:  50,
+				},
+				cli.IntFlag{
+					Name:   "generations, g",
+					Usage:  "Number of generations to iterate through",
+					EnvVar: "GOGP_GENERATIONS",
+					Value:  100,
 				},
 			},
 			Action: func(c *cli.Context) {
 				args := c.Args()
 				var pipe io.Reader
 				if len(args) == 0 {
-					//// Handle stdin
-					//bio := bufio.NewReader(os.Stdin)
-					//for {
-					//line, _, err := bio.ReadLine()
-					//if err != nil {
-					//break
-					//}
-					//buf = append(buf, line...)
-					//buf = append(buf, byte('\n'))
-					//}
 					pipe = os.Stdin
 				} else if len(args) == 1 {
-					// Handle file path
-					//inputFile := args[0]
-					//buf, err := ioutil.ReadFile(inputFile)
-					//if err != nil {
-					//fmt.Println(err.Error())
-					//return
-					//}
+					// Handle file io
 				} else {
 					fmt.Println("Too many arguments, provide path to one file.")
 					return
 				}
-				run(pipe, c.Int("count"))
+				run(pipe, c.Int("count"), c.Int("population"), c.Int("generations"))
 			},
 		},
 	}

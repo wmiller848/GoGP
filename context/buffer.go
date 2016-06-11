@@ -1,7 +1,6 @@
 package context
 
 import (
-	"fmt"
 	"io"
 	"sync"
 )
@@ -14,6 +13,8 @@ func NewBuffer() *Buffer {
 		buffered: make(map[*byte]int),
 	}
 }
+
+const SlurpSize int = 1024 * 200
 
 type Buffer struct {
 	sync.Mutex
@@ -68,44 +69,16 @@ func (b *Buffer) Read(data []byte) (int, error) {
 			b.Unlock()
 			return dataLeng, nil
 		} else if b.cache && index >= bufLeng && bufLeng != 0 {
-			fmt.Println("Read() - closing [inner]")
+			//fmt.Println("Read() - closing [inner]", ref)
 			b.Unlock()
 			return 0, io.EOF
 		}
 		b.Unlock()
 		return 0, nil
 	}
-	fmt.Println("Read() - closing")
+	//fmt.Println("Read() - closing", ref)
 	b.Unlock()
 	return 0, io.EOF
-
-	//if dleng > bleng && bleng != 0 {
-	//dleng = bleng
-	//} else if index+dleng > bleng && index < bleng {
-	//dleng = bleng - index
-	//}
-	//if b.open || bleng > 0 || b.cache {
-	//if index+dleng <= bleng {
-	//if !b.cache {
-	//copy(data, b.data[:dleng])
-	//b.data = b.data[dleng:]
-	//b.buffered[ref] = 0
-	//} else {
-	//copy(data, b.data[index:index+dleng])
-	//b.buffered[ref] += dleng
-	//}
-	//} else if index >= bleng {
-	//fmt.Println(index, bleng)
-	//fmt.Println("Read() - closing (inner)")
-	//b.Unlock()
-	//return 0, io.EOF
-	//}
-	//b.Unlock()
-	//return dleng, nil
-	//}
-	//fmt.Println("Read() - closing")
-	//b.Unlock()
-	//return 0, io.EOF
 }
 
 func (b *Buffer) Write(data []byte) (int, error) {
@@ -120,16 +93,16 @@ func (b *Buffer) Write(data []byte) (int, error) {
 func (b *Buffer) Pipe(r io.Reader) (io.Reader, chan []byte) {
 	tap := make(chan []byte)
 	go func() {
-		data := make([]byte, 1024)
+		data := make([]byte, SlurpSize)
 		for {
 			leng, err := r.Read(data)
 			if leng > 0 {
 				b.Write(data[:leng])
 				tap <- data[:leng]
 			}
-			fmt.Println("Pipe slurping", leng)
+			//fmt.Println("Pipe slurping", leng)
 			if err == io.EOF {
-				fmt.Println("Pipe() - closing")
+				//fmt.Println("Pipe() - closing")
 				b.Close()
 				close(tap)
 				return
@@ -142,7 +115,7 @@ func (b *Buffer) Pipe(r io.Reader) (io.Reader, chan []byte) {
 func (b *Buffer) Tap() chan []byte {
 	tap := make(chan []byte)
 	go func() {
-		data := make([]byte, 1024)
+		data := make([]byte, SlurpSize)
 		for {
 			leng, err := b.Read(data)
 			//fmt.Println(string(data))
@@ -151,7 +124,7 @@ func (b *Buffer) Tap() chan []byte {
 			}
 			//fmt.Println("Tap slurping", leng)
 			if err == io.EOF {
-				fmt.Println("Tap() - closing")
+				//fmt.Println("Tap() - closing")
 				close(tap)
 				return
 			}
@@ -174,15 +147,15 @@ func Multiplex(r io.Reader) *Multiplexer {
 	}
 	m.well.cache = true
 	go func() {
-		data := make([]byte, 1024)
+		data := make([]byte, SlurpSize)
 		for {
 			leng, err := r.Read(data)
 			if leng > 0 {
 				m.well.Write(data[:leng])
 			}
-			fmt.Println("Multiplexer slurping from well", leng)
+			//fmt.Println("Multiplexer slurping from well", leng)
 			if err == io.EOF {
-				fmt.Println("Multiplexer() - closing")
+				//fmt.Println("Multiplexer() - closing")
 				m.well.Close()
 				break
 			}
@@ -194,15 +167,15 @@ func Multiplex(r io.Reader) *Multiplexer {
 func (m *Multiplexer) Multiplex() *Buffer {
 	p := NewBuffer()
 	go func() {
-		data := make([]byte, 1024)
+		data := make([]byte, SlurpSize)
 		for {
 			leng, err := m.well.Read(data)
 			if leng > 0 {
 				p.Write(data[:leng])
 			}
-			fmt.Println("Multiplex slurping", leng)
+			//fmt.Println("Multiplex slurping", leng)
 			if err == io.EOF {
-				fmt.Println("Multiplex() - closing")
+				//fmt.Println("Multiplex() - closing")
 				p.Close()
 				break
 			}
