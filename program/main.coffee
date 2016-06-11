@@ -6,38 +6,25 @@
 ######################
 
 DNA = '{{dna}}'
-######################
-## Stage Spawn
-######################
-#console.log('Setting Argv')
 pargs = process.argv.slice(2)
 args = null
-#console.log('Spawning')
-{{spawn}}
 
-######################
-## Stage Dieing
-######################
 process.on('beforeExit', ->
   #console.log('Dieing...')
-  {{dieing}}
 )
 
-######################
-## Stage Dead
-######################
 process.on('exit', ->
   #console.log('Dead...')
-  {{dead}}
 )
 
-######################
-## Stage Alive
-######################
+##
+##
 run = ->
   {{vars}}
-  output = {{alive}}
-  process.stdout.write(new Buffer.from(output.toString() + '\n')) unless isNaN(output)
+  output = {{output}}
+  if isNaN(output)
+    output = 'NaN'
+  process.stdout.write(new Buffer.from(output.toString() + '\n'))
 
 if pargs.length == 0
   process.stdin.setEncoding('utf8')

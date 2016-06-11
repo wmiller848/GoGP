@@ -16,7 +16,8 @@ func score(output int) int {
 func run(pipe io.Reader, inputs, population, generations int) {
 	ctx := context.New()
 	fmt.Println("Learning from population of", population, "over", generations, "generations for", inputs, "inputs")
-	ctx.RunWithInlineScore(pipe, inputs, population, generations)
+	uuid, fitest := ctx.RunWithInlineScore(pipe, inputs, population, generations)
+	fmt.Printf("%v, %+v\n", uuid, fitest)
 }
 
 func main() {

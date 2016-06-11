@@ -21,7 +21,8 @@ type ScoreFunction func(int) int
 
 type ProgramInstance struct {
 	*program.Program
-	ID string
+	ID         string
+	Generation int
 }
 
 type ProgramScore struct {
@@ -56,40 +57,41 @@ func New() *Context {
 //func (c *Context) EvalFunc(scoreFunc ScoreFunction) {
 //}
 
-func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generations int) *program.Program {
+func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generations int) (string, *ProgramInstance) {
 	os.Mkdir("./out", 0777)
-	sha := util.Random(32)
+	uuid := util.RandomHex(32)
 	os.Mkdir("./out/generations", 0777)
-	os.RemoveAll("./out/generations/" + util.Hex(sha))
-	os.Mkdir("./out/generations/"+util.Hex(sha), 0777)
+	os.RemoveAll("./out/generations/" + uuid)
+	os.Mkdir("./out/generations/"+uuid, 0777)
 	c.InitPopulation(inputs, population)
 	var i int
 	time.Sleep(500 * time.Millisecond)
 	fountain := Multiplex(pipe)
 	for i = 0; i < generations; i++ {
-		c.EvalInline(fountain, i, inputs, sha)
+		c.EvalInline(fountain, i, inputs, uuid)
 	}
 	fountain.Destroy()
-	return c.Fitest()
+	fmt.Printf("\n")
+	return uuid, c.Fitest()
 }
 
-func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid []byte) {
-	path := "./out/generations/" + util.Hex(uuid) + "/" + strconv.Itoa(generation)
+func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid string) {
+	path := "./out/generations/" + uuid + "/" + strconv.Itoa(generation)
 	os.Mkdir(path, 0777)
 
 	//		* Each testBuf row ->
 	//			* compute average score
 	scores := Scores{}
-	genScore := 0.0
 	for i, _ := range c.Programs {
 		prgm := c.Programs[i]
 		cmdStr := path + "/" + prgm.ID
 		cmd := exec.Command("coffee", cmdStr)
 		//
-		cmd.Stderr = os.Stderr
+		stderrBuffer := NewBuffer()
+		cmd.Stderr = stderrBuffer
+		//
 		stdoutBuffer := NewBuffer()
 		cmd.Stdout = stdoutBuffer
-		//
 		// Parse out the asserted correct value from the data stream
 		stdinBuffer := NewBuffer()
 		var stdinTap chan []byte
@@ -107,15 +109,8 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 		}
 		lines := bytes.Split(data, []byte("\n"))
 		for i, _ := range lines {
-			//for j, _ := range lines {
-			//if i != j && string(lines[i]) == string(lines[j]) {
-			////fmt.Println("FOUND SAME!", i, j, string(lines[i]), string(lines[j]))
-			//}
-			//}
-			//fmt.Printf("%v", string(lines[i])+"\n")
 			if len(lines[i]) > 0 {
 				nums := bytes.Split(lines[i], []byte(" "))
-				//fmt.Println(nums)
 				if len(nums) >= inputs {
 					num, err := strconv.ParseFloat(string(nums[inputs]), 64)
 					if err == nil {
@@ -125,9 +120,8 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 			}
 		}
 		//
-		//
 		prgmBytes, _ := prgm.MarshalProgram()
-		fmt.Println(generation, i, "Command - '"+cmdStr+"'")
+		//fmt.Println("Command - '" + cmdStr + "'")
 		err := ioutil.WriteFile(path+"/"+prgm.ID, prgmBytes, 0555)
 		if err != nil {
 			fmt.Println(err.Error())
@@ -138,7 +132,7 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 		}
 		err = cmd.Wait()
 		if err != nil {
-			fmt.Println(err.Error())
+			//fmt.Println(err.Error())
 		}
 
 		stdoutTap := stdoutBuffer.Tap()
@@ -162,30 +156,31 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 			}
 		}
 		// Compair output to assert
-		fmt.Println(len(assert), len(output))
 		if len(assert) == len(output) && len(assert) > 0 {
 			avgScore := 0.0
 			for i, _ := range assert {
-				diff := output[i] - assert[i]
+				diff := assert[i] - output[i]
+				//fmt.Println("Output", assert[i], output[i], diff)
 				avgScore += diff
 			}
 			score := ProgramScore{
 				Index: i,
 				Score: math.Abs(avgScore / float64(len(assert))),
 			}
-			genScore += score.Score
-			scores = append(scores, score)
-			fmt.Println("Score - ", score.Score)
+			if !math.IsNaN(score.Score) && !math.IsInf(score.Score, 0) {
+				scores = append(scores, score)
+				//fmt.Println("Average Score - ", score.Score)
+			} else {
+				//fmt.Println("Program provided invalid score, terminating DNA")
+			}
 		} else {
-			fmt.Println("Program provided incorrect amount of outputs, terminating DNA")
+			//fmt.Println("Program provided incorrect amount of outputs, terminating DNA")
 		}
 	}
-	genScore /= float64(len(scores))
-	fmt.Println("Generation Score -", genScore)
 
 	sort.Sort(scores)
-	// Top 30%
-	limit := len(scores) / 3
+	// Top 25%
+	limit := len(scores) / 4
 	parents := []*ProgramInstance{}
 	children := []*ProgramInstance{}
 	for i, _ := range scores {
@@ -197,17 +192,19 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 	if len(parents) > 0 {
 		for i := 0; i < c.Population-len(parents); i++ {
 			pgm := &ProgramInstance{
-				Program: parents[i%len(parents)].Mutate(),
-				ID:      util.RandomHex(16),
+				Program:    parents[i%len(parents)].Mutate(),
+				ID:         util.RandomHex(16),
+				Generation: generation + 1,
 			}
 			children = append(children, pgm)
 		}
 	}
 	c.Programs = append(parents, children...)
+	fmt.Printf(".")
 }
 
-func (c *Context) Fitest() *program.Program {
-	return nil
+func (c *Context) Fitest() *ProgramInstance {
+	return c.Programs[0]
 }
 
 func (c *Context) InitPopulation(inputs, population int) {
@@ -216,8 +213,9 @@ func (c *Context) InitPopulation(inputs, population int) {
 	var i int
 	for i = 0; i < population; i++ {
 		pgm := &ProgramInstance{
-			Program: program.New(inputs),
-			ID:      util.RandomHex(16),
+			Program:    program.New(inputs),
+			ID:         util.RandomHex(16),
+			Generation: 0,
 		}
 		c.Programs[i] = pgm
 	}

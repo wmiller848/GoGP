@@ -2,13 +2,11 @@ package program
 
 import (
 	"errors"
-	_ "fmt"
 	"io/ioutil"
 	"strings"
 
 	"github.com/wmiller848/GoGP/dna"
 	"github.com/wmiller848/GoGP/gene"
-	_ "github.com/wmiller848/GoGP/util"
 )
 
 type Program struct {
@@ -17,16 +15,6 @@ type Program struct {
 	DNA        *dna.DNA
 	Template   string
 }
-
-//func New(varCount, knobCount int, block gene.BuildingBlock) *Program {
-//g := block.Random(varCount, knobCount)
-//tplBytes, _ := ioutil.ReadFile("./program/main.coffee")
-//return &Program{
-//Block:    block,
-//Gene:     g,
-//Template: string(tplBytes),
-//}
-//}
 
 func New(count int) *Program {
 	bases := [4]dna.Base{0x00, 0x40, 0x80, 0xc0}
@@ -76,27 +64,15 @@ func (p *Program) MarshalProgram() ([]byte, error) {
 	//=====
 	helix, _ := p.DNA.MarshalHelix()
 	pgm = strings.Replace(pgm, "{{dna}}", string(helix), 1)
-	//=====
-	// Spawn
-	//=====
-	pgm = strings.Replace(pgm, "{{spawn}}", "", 1)
 	// =====
-	// Vars
+	// Variabls
 	// =====
 	pgm = strings.Replace(pgm, "{{vars}}", gene.VariableTemplate(p.InputCount), 1)
 	//=====
-	// Alive
+	// Output
 	//=====
 	root, _ := mathGns.MarshalTree()
 	exp, _ := root.MarshalExpression()
-	pgm = strings.Replace(pgm, "{{alive}}", string(exp), 1)
-	//=====
-	// Dieing
-	//=====
-	pgm = strings.Replace(pgm, "{{dieing}}", "", 1)
-	//=====
-	// Dead
-	//=====
-	pgm = strings.Replace(pgm, "{{dead}}", "", 1)
+	pgm = strings.Replace(pgm, "{{output}}", string(exp), 1)
 	return []byte(pgm), nil
 }
