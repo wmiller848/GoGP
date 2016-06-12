@@ -18,6 +18,7 @@ A Go implementation of a 'DNA' based Genetic Programmer.
 
 `-g`  is the number of generations to iterate.
 
+This will output the contents of a [CoffeScript](https://github.com/jashkenas/coffeescript) program that evolved to match the input and desired output.
 
 The contents of `some.dat` looks like this:
 
@@ -30,10 +31,8 @@ The last column in each row is the desired output, meaning
 GoGP will evolve a program that given the input `1.0 3.1 5.2 1.0`
 will output a value as close as possible to `1000`.
 
-Invoking the program is easy `MyProgram.coffee < some.dat`, you
+Invoking the program is easy `coffee MyProgram.coffee < some.dat`, you
 could then pipe that output into your tooling.
-
-This will output the contents of a [CoffeScript](https://github.com/jashkenas/coffeescript) program that evolved to match the input and desired output.
 
 ## About ##
 
