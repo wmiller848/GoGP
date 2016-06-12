@@ -1,7 +1,7 @@
 # GoGP #
 ### Go Genetic Programing ###
 
-A Go implementation of a DNA based Gentic Programmer.
+A Go implementation of a 'DNA' based Genetic Programmer.
 
 ## Usage ##
 
@@ -41,13 +41,12 @@ What does that mean? Lets break it down:
 
 #### Initialization ####
 
-GoGP is heavly inspired by nature, namely natural
-selection mixed with random mutation. At the start
-of a new learning session the specifed population
-size is generated. Each new program in this population
-is defined by its `DNA`. `DNA` is defined as `[]byte`,
-the first generation programs just have random bytes
-for their `DNA`.
+GoGP is heavly inspired by nature, namely DNA sequencing, natural
+selection, and random mutation. At the start of a new
+learning session the specifed population size is generated.
+Each new program in this population is defined by its `DNA`.
+`DNA` is defined as `[]byte`, the first generation programs just
+have random bytes for their `DNA`.
 
 #### DNA ####
 
@@ -55,16 +54,17 @@ So `DNA` is a `[]byte`, but how does it work? There are several
 steps involved in converting that `[]byte` into a working math
 equation to operate on input.
 
-The first step is to sequence the `DNA`, like real `DNA` our
-digital `DNA` contains 4 bases and can be read in three frames.
-Giving us 4^3=64 possible encodings to work with. Each program
-contains two sequences of `DNA`, a `ying` and `yang` strand. Like
-real `DNA` each strand is sequenced togeather and produces a single
-reading of the genes encoded. The process looks at each of the three
-readings in each strand, and produces the gene sequence in order of
-index of each gene. For example, lets look at these two stands:
+The first step is to sequence the `DNA`, like real `DNA`, our
+digital `DNA` contains four bases with a block size of three, additonaly
+each `DNA` strand can be read in three frames. Giving us 4^3=64
+possible encodings to work with. Each program contains two sequences
+of `DNA`, a `ying` and `yang` strand. Like real `DNA` each strand
+is sequenced togeather and produces a single reading of the genes encoded.
+The process looks at each of the three readings in each strand, and
+produces the gene sequence in order of index of each gene.
 
 Bases are defined as:
+
 \* Note this may become configurable in the future
 
 ```
@@ -74,30 +74,34 @@ C = [0x80 to 0xc0]
 D = [0xc0 to 0xff]
 ```
 
+For example, lets look at these two strands:
+
 `ying = [0,  24, 200, 241, 3,  12,  33, 4,  132]`
+
 `yang = [20, 51, 127, 9,   15, 198, 18, 10, 215]`
 
 We could read each strand in three ways:
 
 Strand `ying`:
 
-* [0, 24, 200], [241, 3, 12], [33, 4, 132]
-* [24, 200, 241], [3, 12, 33], [4, 132, 0]
-* [200, 241, 3], [12, 33, 4], [132, 0, 24]
+* `[0, 24, 200], [241, 3, 12], [33, 4, 132]`
+* `[24, 200, 241], [3, 12, 33], [4, 132, 0]`
+* `[200, 241, 3], [12, 33, 4], [132, 0, 24]`
 
 Strand `yang`
 
-* [20, 51, 127], [9, 15, 198], [18, 10, 215]
-* [51, 127, 9], [15, 198, 18], [10, 215, 20]
-* [127, 9, 15], [198, 18, 10], [215, 20, 51]
+* `[20, 51, 127], [9, 15, 198], [18, 10, 215]`
+* `[51, 127, 9], [15, 198, 18], [10, 215, 20]`
+* `[127, 9, 15], [198, 18, 10], [215, 20, 51]`
 
 Between those three readings we look for the first one that
 contains the start block `AAA`. If no start block is found that
 means that strand doesnt sequence to any genes. If we do find
 a start block we start reading from the strand from that frame,
-we read until we hit and end block `DDD` or the strand ends. We
+we read until we hit an end block `DDD` or the strand ends. We
 do the same thing for both strands and then sequence the output
-together respecting index.
+together respecting index. Also note index for any given gene takes
+into account the offset of the frame it was read from.
 
 For example, say strand `ying` has a gene that starts at index 2
 and ends at index 20. Say strand `yang` has two genes, one that
@@ -106,13 +110,22 @@ starts at index 5 and goes to 15, and the other that starts at index
 
 `gene = ying[2:20] + yang[25:30]`
 
-Notice that `yang[5:15]` was not included, that is because stand `ying`
+Notice that `yang[5:15]` was not included, that is because strand `ying`
 gene sequence ran through those indexes. This works almost the same way
 in real `DNA`.
 
+A visual maping might looke like this:
+
+```
+Ying = xxx=======xxxxxx=======xxx
+Yang = =====xxxx=========xxxx====
+```
+
+Where the 'x' is the genes that were sequenced.
+
 Remembering that we have 64 total encoding, and that the start and stop
 blocks take up 2 of those, this means we can define 62 additional encodings.
-Currently we define the following blocks:
+Currently we define the following block encodings:
 
 `+ - * / 0 1 2 3 4 5 6 7 8 9 ,` and one block for each input column as
 additional encodings.
@@ -133,13 +146,15 @@ to perform mutations.
 
 #### Program Expressions and Trees ####
 
-Now we enter the the standard genetic programing space. We have a program
-expression we can validate and convert into a `Program Tree`. These expressions
-are read from right to left and produce a program tree. For example:
+Now we enter the the standard [Genetic Programing](https://en.wikipedia.org/wiki/Genetic_programming) space.
+
+We have a program expression we can validate and convert into a `Program Tree`.
+These expressions are read from right to left and produce a program tree.
+For example:
 
 `+12,5,$a-10,2`
 
-would convert to the following tree
+Would convert to the following tree:
 
 ```
 +
@@ -157,8 +172,6 @@ our desired output. Because the mutations occures on the meta level above
 the `Program Expression` we gain a lot of resilence to getting stuck in
 bad tree evolvotion cycles. Because the dual `DNA` strands encode based
 off the index we can preserve 'dominate genes' aka those with a lower index.
-
-#### Output ####
 
 ## Legal Foo and Licences ##
 
