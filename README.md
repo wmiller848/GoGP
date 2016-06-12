@@ -226,6 +226,7 @@ In anycase, the process currently works as follows:
 
 Some items that would be great to have, in a rough order:
 
+* Adding bitwise operator support `& | ~ ^`
 * `{` and `}` encoding support
 * Better scoring mechanism
 * Some parallelism for running the generations
