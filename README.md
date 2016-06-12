@@ -3,18 +3,20 @@
 
 A Go implementation of a 'DNA' based Genetic Programmer.
 
+\*\* This software is VERY beta, keep that in mind. \*\*
+
 ## Usage ##
 
 `go get github.com/wmiller848/GoGP`
 
 `GoGP learn -c 4 -p 20 -g 10 < some.dat > MyProgram.coffee`
 
-`-c` is the number of columns in the input data
-that should be learned.
+`-c`  is the number of columns in the input data
+      that should be learned.
 
-`-p` is the running population to keep around.
+`-p`  is the running population to keep around.
 
-`-g` is the number of generations to iterate.
+`-g`  is the number of generations to iterate.
 
 
 The contents of `some.dat` looks like this:
@@ -204,6 +206,22 @@ our desired output. Because the mutations occures on the meta level above
 the `Program Expression` we gain a lot of resilence to getting stuck in
 bad tree evolvotion cycles. Because the dual `DNA` strands encode based
 off the index we can preserve 'dominate genes' aka those with a lower index.
+
+#### The Evolution Process ####
+
+Currently we apply an asexual mutation pattern, however because we have `DNA`
+strands we could do sexual crossover, ie combind strands between parents and
+maybe mutate the strands. However additional strand base pairing rules probaly
+need to be developed to mimic nature for seuxal crossover to work at its best.
+
+In anycase, the process currently works as follows:
+
+1. Generate the base population with random `DNA`
+2. Run the training data though the program population
+3. Take the top 25% and their (asexual mutated) children as the next generation
+4. Repeat steps 2. and 3. for n generations
+5. Return the program with the best fitness score
+6. Profit
 
 ## Legal Foo and Licences ##
 
