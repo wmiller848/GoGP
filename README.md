@@ -222,6 +222,19 @@ In anycase, the process currently works as follows:
 5. Return the program with the best fitness score
 6. Profit
 
+## Road Map ##
+
+Some items that would be great to have, in a rough order:
+
+* `{` and `}` encoding support
+* Better scoring mechanism
+* Some parallelism for running the generations
+* Network io support for generated programs so you can send them data via tcp
+* Sexual crossover
+* Support outputing programs in many different languages
+* Generating a lib file instead of a program
+* More then just math genes, maybe syscall genes for fuzzing :)
+
 ## Legal Foo and Licences ##
 
 This code is licenced under a general BSD Licences, basicaly use
