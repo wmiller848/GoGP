@@ -156,7 +156,7 @@ Using these simple rules, we can evolve arbitrary program trees to estimate
 our desired output. Because the mutations occures on the meta level above
 the `Program Expression` we gain a lot of resilence to getting stuck in
 bad tree evolvotion cycles. Because the dual `DNA` strands encode based
-of index we can preserve 'dominate genes' aka those with a lower index.
+off the index we can preserve 'dominate genes' aka those with a lower index.
 
 #### Output ####
 
