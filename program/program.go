@@ -24,6 +24,7 @@ func New(count int) *Program {
 		dna.Codon("2"), dna.Codon("3"), dna.Codon("4"),
 		dna.Codon("5"), dna.Codon("6"), dna.Codon("7"),
 		dna.Codon("8"), dna.Codon("9"), dna.Codon(","),
+		// TODO : get scope encoding to work with DNA
 		// dna.Codon("{"), dna.Codon("}"),
 	}
 	for i := 0; i < count; i++ {

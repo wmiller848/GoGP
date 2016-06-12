@@ -146,7 +146,7 @@ to perform mutations.
 
 #### Program Expressions and Trees ####
 
-Now we enter the the standard [Genetic Programing](https://en.wikipedia.org/wiki/Genetic_programming) space.
+Now we enter the the standard [Genetic Programming](https://en.wikipedia.org/wiki/Genetic_programming) space.
 
 We have a program expression we can validate and convert into a `Program Tree`.
 These expressions are read from right to left and produce a program tree.
@@ -157,15 +157,47 @@ For example:
 Would convert to the following tree:
 
 ```
-+
+    +
+____|_______
+|   |  |   |
 12  5  $a  -
-           10  2
+           |
+         _____
+         |   |
+         10  2
 ```
 
 Given a tree, we can then covert that into a valid program. The previous tree
 would convert to:
 
 `(12 + 5 + $a) + (10 - 2)`
+
+In order to support balanced trees the `Program Expression` supports
+arbitrarily nested `{` and `}` to establish scope. For example:
+
+\* Note: `DNA` encoding support for this is not implemented yet.
+
+`/{12,10-3,$a}{*21,5}`
+
+This expression will convert to:
+
+```
+          /
+          |
+    ______________
+    |             |
+_________         *
+|   |    |        |
+12  10   -       ____
+         |       |   |
+        ____     21  5
+        |  |
+        3  $a
+```
+
+The previous tree would convert to:
+
+`(12 / 10 / (3 - $a)) / (21 * 5)`
 
 Using these simple rules, we can evolve arbitrary program trees to estimate
 our desired output. Because the mutations occures on the meta level above
