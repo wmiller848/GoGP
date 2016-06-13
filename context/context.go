@@ -184,6 +184,7 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 	parents := []*ProgramInstance{}
 	children := []*ProgramInstance{}
 	for i, _ := range scores {
+		//fmt.Println(scores[i].Score)
 		if i < limit {
 			parents = append(parents, c.Programs[scores[i].Index])
 		}

@@ -1,7 +1,6 @@
 package gene
 
 import (
-	_ "github.com/wmiller848/GoGP/util"
 	"strconv"
 )
 
@@ -12,6 +11,8 @@ const (
 	CursorNumber        int = 3
 	CursorOperator      int = 4
 	CursorSeparator     int = 5
+	CursorScopeStart    int = 6
+	CursorScopeStop     int = 7
 )
 
 type Gene interface {
@@ -49,7 +50,7 @@ func Variable(j int) string {
 func VariableTemplate(count int) string {
 	tmpl := ""
 	for i := 0; i < count; i++ {
-		tmpl += Variable(i) + " = args[" + strconv.Itoa(i) + "];"
+		tmpl += Variable(i) + " = Number(args[" + strconv.Itoa(i) + "]);"
 	}
 	return tmpl
 }

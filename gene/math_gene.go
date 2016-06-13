@@ -1,9 +1,5 @@
 package gene
 
-import (
-	_ "fmt"
-)
-
 type MathGene GenericGene
 
 func (g MathGene) Eq(ng Gene) bool {
@@ -46,6 +42,8 @@ func (g MathGene) Heal() []byte {
 	valid := false
 	gne := g.Clone()
 	cursor := CursorNil
+	cursorScope := CursorNil
+	scope := 0
 	for i, _ := range gne {
 		switch gne[i] {
 		case byte('$'):
@@ -62,16 +60,46 @@ func (g MathGene) Heal() []byte {
 				healed = append(healed, gne[i])
 				cursor = CursorVariable
 			}
-		case byte(','), byte('{'), byte('}'):
+		case byte('{'):
 			if valid == true {
+				healed = append(healed, gne[i])
+				cursor = CursorScopeStart
+				cursorScope = CursorScopeStart
+				scope++
+			}
+		case byte('}'):
+			if valid == true {
+				switch cursorScope {
+				case CursorScopeStart:
+				case CursorScopeStop:
+					if scope <= 0 {
+						continue
+					}
+				default:
+					continue
+				}
 				switch cursor {
 				case CursorSeparator, CursorOperator:
+					healed[len(healed)-1] = 0x00
+				}
+				healed = append(healed, gne[i])
+				cursor = CursorScopeStop
+				cursorScope = CursorScopeStop
+				scope--
+				if scope <= 0 {
+					cursorScope = CursorNil
+				}
+			}
+		case byte(','):
+			if valid == true {
+				switch cursor {
+				case CursorSeparator, CursorOperator, CursorScopeStart, CursorScopeStop:
 					continue
 				}
 				healed = append(healed, gne[i])
 				cursor = CursorSeparator
 			}
-		case byte('*'), byte('/'), byte('+'), byte('-'):
+		case byte('*'), byte('/'), byte('+'), byte('-'), byte('&'), byte('|'), byte('^'):
 			valid = true
 			if valid == true {
 				switch cursor {
@@ -102,11 +130,16 @@ func (g MathGene) Heal() []byte {
 	}
 	for i := len(healed) - 1; i > 0; i-- {
 		switch healed[i] {
-		case byte(','), byte('*'), byte('/'), byte('+'), byte('-'):
+		case byte(','), byte('*'), byte('/'), byte('+'), byte('-'), byte('&'), byte('|'), byte('^'):
 			healed[i] = 0x00
 			continue
 		}
 		break
+	}
+	if cursorScope == CursorScopeStart {
+		for i := 0; i < scope; i++ {
+			healed = append(healed, byte('}'))
+		}
 	}
 	return MathGene(healed).Clone()
 }
@@ -144,7 +177,7 @@ func (g MathGene) MarshalTree() (*GeneNode, error) {
 				numberNode = node
 			}
 			cursor = CursorNumber
-		case byte('+'), byte('-'), byte('*'), byte('/'):
+		case byte('+'), byte('-'), byte('*'), byte('/'), byte('&'), byte('|'), byte('^'):
 			if cursor != CursorNil {
 				node := &GeneNode{
 					Value:    string(chrom),

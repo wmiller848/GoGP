@@ -19,13 +19,12 @@ type Program struct {
 func New(count int) *Program {
 	bases := [4]dna.Base{0x00, 0x40, 0x80, 0xc0}
 	codons := []dna.Codon{
-		dna.Codon("+"), dna.Codon("-"), dna.Codon("*"),
-		dna.Codon("/"), dna.Codon("0"), dna.Codon("1"),
-		dna.Codon("2"), dna.Codon("3"), dna.Codon("4"),
-		dna.Codon("5"), dna.Codon("6"), dna.Codon("7"),
-		dna.Codon("8"), dna.Codon("9"), dna.Codon(","),
-		// TODO : get scope encoding to work with DNA
-		// dna.Codon("{"), dna.Codon("}"),
+		dna.Codon("&"), dna.Codon("|"), dna.Codon("^"),
+		dna.Codon("+"), dna.Codon("-"), dna.Codon("*"), dna.Codon("/"),
+		dna.Codon("0"), dna.Codon("1"), dna.Codon("2"), dna.Codon("3"),
+		dna.Codon("4"), dna.Codon("5"), dna.Codon("6"), dna.Codon("7"),
+		dna.Codon("8"), dna.Codon("9"),
+		dna.Codon(","), dna.Codon("{"), dna.Codon("}"),
 	}
 	for i := 0; i < count; i++ {
 		codons = append(codons, dna.Codon(gene.Variable(i)))
