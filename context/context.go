@@ -37,12 +37,17 @@ func (s Scores) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s Scores) Less(i, j int) bool { return s[i].Score < s[j].Score }
 
 type Context struct {
-	Population int
-	Programs   []*ProgramInstance
+	Population  int
+	Programs    []*ProgramInstance
+	VerboseMode bool
 }
 
 func New() *Context {
 	return &Context{}
+}
+
+func (c *Context) Verbose() {
+	c.VerboseMode = !c.VerboseMode
 }
 
 //func (c *Context) RunWithScoreFunc(inputs, population, generations int, scoreFunc ScoreFunction) *program.Program {
@@ -71,7 +76,9 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generat
 		c.EvalInline(fountain, i, inputs, uuid)
 	}
 	fountain.Destroy()
-	fmt.Printf("\n")
+	if c.VerboseMode {
+		fmt.Printf("\n")
+	}
 	return uuid, c.Fitest()
 }
 
@@ -157,15 +164,22 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 		}
 		// Compair output to assert
 		if len(assert) == len(output) && len(assert) > 0 {
-			avgScore := 0.0
+			mean := 0.0
 			for i, _ := range assert {
 				diff := assert[i] - output[i]
 				//fmt.Println("Output", assert[i], output[i], diff)
-				avgScore += diff
+				mean += diff
 			}
+
+			e := 0.0
+			for i, _ := range assert {
+				q := math.Pow(assert[i]-mean, 2)
+				e += q
+			}
+
 			score := ProgramScore{
 				Index: i,
-				Score: math.Abs(avgScore / float64(len(assert))),
+				Score: e / float64(len(assert)),
 			}
 			if !math.IsNaN(score.Score) && !math.IsInf(score.Score, 0) {
 				scores = append(scores, score)
@@ -201,7 +215,9 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 		}
 	}
 	c.Programs = append(parents, children...)
-	fmt.Printf(".")
+	if c.VerboseMode {
+		fmt.Printf(".")
+	}
 }
 
 func (c *Context) Fitest() *ProgramInstance {
