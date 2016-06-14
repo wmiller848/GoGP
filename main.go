@@ -13,7 +13,7 @@ func score(output int) int {
 	return 0
 }
 
-func run(pipe io.Reader, inputs, population, generations int, verbose bool) {
+func run(pipe io.Reader, inputs, population, generations int, auto, verbose bool) {
 	ctx := context.New()
 	if verbose {
 		ctx.Verbose()
@@ -21,10 +21,11 @@ func run(pipe io.Reader, inputs, population, generations int, verbose bool) {
 	if verbose {
 		fmt.Println("Learning from population of", population, "over", generations, "generations for", inputs, "inputs")
 	}
-	uuid, fitest := ctx.RunWithInlineScore(pipe, inputs, population, generations)
+	uuid, fitest := ctx.RunWithInlineScore(pipe, inputs, population, generations, auto)
 	prgm, _ := fitest.MarshalProgram()
 	if verbose {
 		fmt.Println(uuid)
+		fmt.Printf("%+v\n", fitest.Score)
 	}
 	fmt.Printf("%+v\n", string(prgm))
 }
@@ -61,6 +62,11 @@ func main() {
 					Usage:  "Output more then just the evolved program",
 					EnvVar: "GOGP_VERBOSE",
 				},
+				cli.BoolFlag{
+					Name:   "auto, a",
+					Usage:  "Run until a reasonable score is found",
+					EnvVar: "GOGP_AUTO",
+				},
 			},
 			Action: func(c *cli.Context) {
 				args := c.Args()
@@ -73,7 +79,7 @@ func main() {
 					fmt.Println("Too many arguments, provide path to one file.")
 					return
 				}
-				run(pipe, c.Int("count"), c.Int("population"), c.Int("generations"), c.Bool("verbose"))
+				run(pipe, c.Int("count"), c.Int("population"), c.Int("generations"), c.Bool("Auto"), c.Bool("verbose"))
 			},
 		},
 	}

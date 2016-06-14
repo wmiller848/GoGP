@@ -98,7 +98,7 @@ func (d *DNA) Mutate() *DNA {
 		// Omit codon
 		case 1:
 		// Add extra
-		case 2:
+		case 3:
 			strandYing = append(strandYing, codon)
 			strandYing = append(strandYing, byte(util.RandomNumber(0, 255)))
 		// No Op

@@ -8,8 +8,8 @@ import (
 	"github.com/wmiller848/GoGP/util"
 )
 
-const SeedBase int = 50
-const SeedMax int = 500
+const SeedBase int = 100
+const SeedMax int = 200
 
 type Base byte
 

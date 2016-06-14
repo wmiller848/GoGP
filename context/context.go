@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	_ "github.com/wmiller848/GoGP/gene"
+	"github.com/wmiller848/GoGP/gene"
 	"github.com/wmiller848/GoGP/program"
 	"github.com/wmiller848/GoGP/util"
 )
@@ -23,6 +23,7 @@ type ProgramInstance struct {
 	*program.Program
 	ID         string
 	Generation int
+	Score      *ProgramScore
 }
 
 type ProgramScore struct {
@@ -62,18 +63,45 @@ func (c *Context) Verbose() {
 //func (c *Context) EvalFunc(scoreFunc ScoreFunction) {
 //}
 
-func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generations int) (string, *ProgramInstance) {
+func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generations int, auto bool) (string, *ProgramInstance) {
 	os.Mkdir("./out", 0777)
 	uuid := util.RandomHex(32)
 	os.Mkdir("./out/generations", 0777)
 	os.RemoveAll("./out/generations/" + uuid)
 	os.Mkdir("./out/generations/"+uuid, 0777)
 	c.InitPopulation(inputs, population)
-	var i int
+	var i int = 0
 	time.Sleep(500 * time.Millisecond)
 	fountain := Multiplex(pipe)
-	for i = 0; i < generations; i++ {
-		c.EvalInline(fountain, i, inputs, uuid)
+	for {
+		if i >= generations && !auto {
+			break
+		}
+
+		parents := c.EvalInline(fountain, i, inputs, uuid)
+
+		prgm := c.Fitest()
+		if prgm != nil && prgm.Score.Score < 100 {
+			break
+		}
+
+		children := []*ProgramInstance{}
+		if len(parents) > 0 && i != generations-1 {
+			for i := 0; i < c.Population-len(parents); i++ {
+				pgm := &ProgramInstance{
+					Program:    parents[i%len(parents)].Mutate(),
+					ID:         util.RandomHex(16),
+					Generation: i + 1,
+				}
+				children = append(children, pgm)
+			}
+		}
+		c.Programs = append(parents, children...)
+		if c.VerboseMode {
+			fmt.Printf(".")
+		}
+
+		i++
 	}
 	fountain.Destroy()
 	if c.VerboseMode {
@@ -82,7 +110,7 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generat
 	return uuid, c.Fitest()
 }
 
-func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid string) {
+func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid string) []*ProgramInstance {
 	path := "./out/generations/" + uuid + "/" + strconv.Itoa(generation)
 	os.Mkdir(path, 0777)
 
@@ -166,22 +194,34 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 		if len(assert) == len(output) && len(assert) > 0 {
 			mean := 0.0
 			for i, _ := range assert {
-				diff := assert[i] - output[i]
-				//fmt.Println("Output", assert[i], output[i], diff)
-				mean += diff
+				diff := math.Abs(assert[i] - output[i])
+				if diff > 500 || math.IsNaN(output[i]) {
+					mean++
+				}
 			}
 
-			e := 0.0
-			for i, _ := range assert {
-				q := math.Pow(assert[i]-mean, 2)
-				e += q
+			fmt.Println(mean)
+			if mean == 0 {
+				fmt.Println(assert, output)
 			}
+			//gn, _ := prgm.DNA.MarshalGenes()
+			//d := gene.MathGene(gn)
+			//fmt.Println("Output", mean, string(d.Heal()))
+			//mean = mean / float64(len(assert))
 
-			score := ProgramScore{
-				Index: i,
-				Score: e / float64(len(assert)),
-			}
-			if !math.IsNaN(score.Score) && !math.IsInf(score.Score, 0) {
+			//e := 0.0
+			//for i, _ := range assert {
+			//q := math.Pow(output[i]-mean, 2)
+			//e += q
+			//}
+
+			if !math.IsNaN(mean) && !math.IsInf(mean, 0) {
+				score := ProgramScore{
+					Index: i,
+					//Score: e / float64(len(assert)-1),
+					Score: mean,
+				}
+				prgm.Score = &score
 				scores = append(scores, score)
 				//fmt.Println("Average Score - ", score.Score)
 			} else {
@@ -193,35 +233,33 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 	}
 
 	sort.Sort(scores)
-	// Top 25%
-	limit := len(scores) / 4
+	// Top 30%
+	limit := len(scores) / 3
 	parents := []*ProgramInstance{}
-	children := []*ProgramInstance{}
 	for i, _ := range scores {
 		//fmt.Println(scores[i].Score)
 		if i < limit {
 			parents = append(parents, c.Programs[scores[i].Index])
 		}
 	}
-
-	if len(parents) > 0 {
-		for i := 0; i < c.Population-len(parents); i++ {
-			pgm := &ProgramInstance{
-				Program:    parents[i%len(parents)].Mutate(),
-				ID:         util.RandomHex(16),
-				Generation: generation + 1,
-			}
-			children = append(children, pgm)
-		}
-	}
-	c.Programs = append(parents, children...)
-	if c.VerboseMode {
-		fmt.Printf(".")
-	}
+	return parents
 }
 
 func (c *Context) Fitest() *ProgramInstance {
-	return c.Programs[0]
+	if c.VerboseMode {
+		for i, _ := range c.Programs {
+			gn, _ := c.Programs[i].DNA.MarshalGenes()
+			fmt.Println("shit")
+			d := gene.MathGene(gn)
+			fmt.Println("fuck")
+			fmt.Println("Program", c.Programs[i].ID, c.Programs[i].Score.Score, string(d.Heal()))
+		}
+	}
+	if len(c.Programs) > 0 {
+		return c.Programs[0]
+	} else {
+		return nil
+	}
 }
 
 func (c *Context) InitPopulation(inputs, population int) {

@@ -23,7 +23,7 @@ run = ->
   {{vars}}
   output = {{output}}
   if isNaN(output)
-    output = 'NaN'
+    output = ''
   process.stdout.write(new Buffer.from(output.toString() + '\n'))
 
 if pargs.length == 0
