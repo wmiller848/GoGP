@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/wmiller848/GoGP/gene"
 	"github.com/wmiller848/GoGP/program"
 	"github.com/wmiller848/GoGP/util"
 )
@@ -23,23 +22,18 @@ type ProgramInstance struct {
 	*program.Program
 	ID         string
 	Generation int
-	Score      *ProgramScore
+	Score      float64
 }
 
-type ProgramScore struct {
-	Index int
-	Score float64
-}
+type Programs []*ProgramInstance
 
-type Scores []ProgramScore
-
-func (s Scores) Len() int           { return len(s) }
-func (s Scores) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-func (s Scores) Less(i, j int) bool { return s[i].Score < s[j].Score }
+func (p Programs) Len() int           { return len(p) }
+func (p Programs) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p Programs) Less(i, j int) bool { return p[i].Score < p[j].Score }
 
 type Context struct {
 	Population  int
-	Programs    []*ProgramInstance
+	Programs    Programs
 	VerboseMode bool
 }
 
@@ -50,18 +44,6 @@ func New() *Context {
 func (c *Context) Verbose() {
 	c.VerboseMode = !c.VerboseMode
 }
-
-//func (c *Context) RunWithScoreFunc(inputs, population, generations int, scoreFunc ScoreFunction) *program.Program {
-//var i int
-//c.InitPopulation(inputs, population)
-//for i = 0; i < generations; i++ {
-//c.EvalFunc(scoreFunc)
-//}
-//return c.Fitest()
-//}
-
-//func (c *Context) EvalFunc(scoreFunc ScoreFunction) {
-//}
 
 func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generations int, auto bool) (string, *ProgramInstance) {
 	os.Mkdir("./out", 0777)
@@ -80,11 +62,6 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generat
 
 		parents := c.EvalInline(fountain, i, inputs, uuid)
 
-		prgm := c.Fitest()
-		if prgm != nil && prgm.Score.Score < 100 {
-			break
-		}
-
 		children := []*ProgramInstance{}
 		if len(parents) > 0 && i != generations-1 {
 			for i := 0; i < c.Population-len(parents); i++ {
@@ -92,15 +69,19 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generat
 					Program:    parents[i%len(parents)].Mutate(),
 					ID:         util.RandomHex(16),
 					Generation: i + 1,
+					Score:      math.MaxFloat64,
 				}
 				children = append(children, pgm)
 			}
+			c.Programs = append(parents, children...)
+			prgm := c.Fitest()
+			if prgm != nil && prgm.Score < 0.1 {
+				break
+			}
 		}
-		c.Programs = append(parents, children...)
 		if c.VerboseMode {
 			fmt.Printf(".")
 		}
-
 		i++
 	}
 	fountain.Destroy()
@@ -110,13 +91,13 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generat
 	return uuid, c.Fitest()
 }
 
-func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid string) []*ProgramInstance {
+func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid string) Programs {
 	path := "./out/generations/" + uuid + "/" + strconv.Itoa(generation)
 	os.Mkdir(path, 0777)
 
 	//		* Each testBuf row ->
 	//			* compute average score
-	scores := Scores{}
+	validPrograms := 0
 	for i, _ := range c.Programs {
 		prgm := c.Programs[i]
 		cmdStr := path + "/" + prgm.ID
@@ -192,70 +173,42 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 		}
 		// Compair output to assert
 		if len(assert) == len(output) && len(assert) > 0 {
-			mean := 0.0
+			score := 0.0
 			for i, _ := range assert {
 				diff := math.Abs(assert[i] - output[i])
 				if diff > 500 || math.IsNaN(output[i]) {
-					mean++
+					score++
 				}
 			}
-
-			fmt.Println(mean)
-			if mean == 0 {
-				fmt.Println(assert, output)
-			}
-			//gn, _ := prgm.DNA.MarshalGenes()
-			//d := gene.MathGene(gn)
-			//fmt.Println("Output", mean, string(d.Heal()))
-			//mean = mean / float64(len(assert))
-
-			//e := 0.0
-			//for i, _ := range assert {
-			//q := math.Pow(output[i]-mean, 2)
-			//e += q
-			//}
-
-			if !math.IsNaN(mean) && !math.IsInf(mean, 0) {
-				score := ProgramScore{
-					Index: i,
-					//Score: e / float64(len(assert)-1),
-					Score: mean,
-				}
-				prgm.Score = &score
-				scores = append(scores, score)
-				//fmt.Println("Average Score - ", score.Score)
-			} else {
-				//fmt.Println("Program provided invalid score, terminating DNA")
-			}
-		} else {
-			//fmt.Println("Program provided incorrect amount of outputs, terminating DNA")
+			prgm.Score = score / float64(len(assert))
+			validPrograms++
 		}
 	}
 
-	sort.Sort(scores)
+	sort.Sort(c.Programs)
 	// Top 30%
-	limit := len(scores) / 3
-	parents := []*ProgramInstance{}
-	for i, _ := range scores {
-		//fmt.Println(scores[i].Score)
-		if i < limit {
-			parents = append(parents, c.Programs[scores[i].Index])
-		}
+	limit := validPrograms / 3
+	parents := make(Programs, limit)
+	for i := 0; i < limit; i++ {
+		parents[i] = c.Programs[i]
 	}
 	return parents
 }
 
 func (c *Context) Fitest() *ProgramInstance {
-	if c.VerboseMode {
-		for i, _ := range c.Programs {
-			gn, _ := c.Programs[i].DNA.MarshalGenes()
-			fmt.Println("shit")
-			d := gene.MathGene(gn)
-			fmt.Println("fuck")
-			fmt.Println("Program", c.Programs[i].ID, c.Programs[i].Score.Score, string(d.Heal()))
-		}
-	}
+	//if c.VerboseMode {
+	//for i, _ := range c.Programs {
+	//gn, err := c.Programs[i].DNA.MarshalGenes()
+	//if err != nil {
+	//fmt.Println(err.Error())
+	//continue
+	//}
+	//d := gene.MathGene(gn)
+	//fmt.Println("Program", c.Programs[i].ID, c.Programs[i].Score, string(d.Heal()))
+	//}
+	//}
 	if len(c.Programs) > 0 {
+		sort.Sort(c.Programs)
 		return c.Programs[0]
 	} else {
 		return nil
@@ -264,13 +217,14 @@ func (c *Context) Fitest() *ProgramInstance {
 
 func (c *Context) InitPopulation(inputs, population int) {
 	c.Population = population
-	c.Programs = make([]*ProgramInstance, population)
+	c.Programs = make(Programs, population)
 	var i int
 	for i = 0; i < population; i++ {
 		pgm := &ProgramInstance{
 			Program:    program.New(inputs),
 			ID:         util.RandomHex(16),
 			Generation: 0,
+			Score:      math.MaxFloat64,
 		}
 		c.Programs[i] = pgm
 	}

@@ -17,9 +17,11 @@ func run(pipe io.Reader, inputs, population, generations int, auto, verbose bool
 	ctx := context.New()
 	if verbose {
 		ctx.Verbose()
-	}
-	if verbose {
-		fmt.Println("Learning from population of", population, "over", generations, "generations for", inputs, "inputs")
+		if auto {
+			fmt.Println("Learning from population of", population, "for", inputs, "inputs")
+		} else {
+			fmt.Println("Learning from population of", population, "over", generations, "generations for", inputs, "inputs")
+		}
 	}
 	uuid, fitest := ctx.RunWithInlineScore(pipe, inputs, population, generations, auto)
 	prgm, _ := fitest.MarshalProgram()
@@ -79,7 +81,7 @@ func main() {
 					fmt.Println("Too many arguments, provide path to one file.")
 					return
 				}
-				run(pipe, c.Int("count"), c.Int("population"), c.Int("generations"), c.Bool("Auto"), c.Bool("verbose"))
+				run(pipe, c.Int("count"), c.Int("population"), c.Int("generations"), c.Bool("auto"), c.Bool("verbose"))
 			},
 		},
 	}
