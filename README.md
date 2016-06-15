@@ -176,8 +176,6 @@ would convert to:
 In order to support balanced trees the `Program Expression` supports
 arbitrarily nested `{` and `}` to establish scope. For example:
 
-\* Note: `DNA` encoding support for this is not implemented yet.
-
 `/{12,10-3,$a}{*21,5}`
 
 This expression will convert to:
@@ -226,9 +224,6 @@ In anycase, the process currently works as follows:
 
 Some items that would be great to have, in a rough order:
 
-* Adding bitwise operator support `& | ~ ^`
-* `{` and `}` encoding support
-* Better scoring mechanism
 * Some parallelism for running the generations
 * Network io support for generated programs so you can send them data via tcp
 * Sexual crossover
