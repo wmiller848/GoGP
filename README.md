@@ -128,7 +128,7 @@ Remembering that we have 64 total encoding, and that the start and stop
 blocks take up 2 of those, this means we can define 62 additional encodings.
 Currently we define the following block encodings:
 
-`+ - * / 0 1 2 3 4 5 6 7 8 9 ,` and one block for each input column as
+`& | ^ + - * / 0 1 2 3 4 5 6 7 8 9 ,` and one block for each input column as
 additional encodings.
 
 The net result is that after we sequence all the genes we could get something
