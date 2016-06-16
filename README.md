@@ -11,12 +11,20 @@ A Go implementation of a 'DNA' based Genetic Programmer.
 
 `GoGP learn -c 4 -p 20 -g 10 < some.dat > MyProgram.coffee`
 
-`-c`  is the number of columns in the input data
+`-c`  Count: The number of columns in the input data
       that should be learned.
+      Required: true
 
-`-p`  is the running population to keep around.
+`-p`  Population: The running population to keep around.
+      Default: 20
+      Required: false
 
-`-g`  is the number of generations to iterate.
+`-g`  Generations: The number of generations to iterate.
+      Required: false
+
+`-a`  Auto: Run until a score of 90% or better is found.
+      Default: true
+      Required: false
 
 This will output the contents of a [CoffeScript](https://github.com/jashkenas/coffeescript) program that evolved to match the input and desired output.
 

@@ -45,7 +45,7 @@ func (c *Context) Verbose() {
 	c.VerboseMode = !c.VerboseMode
 }
 
-func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generations int, auto bool) (string, *ProgramInstance) {
+func (c *Context) RunWithInlineScore(pipe io.Reader, threshold float64, inputs, population, generations int, auto bool) (string, *ProgramInstance) {
 	os.Mkdir("./out", 0777)
 	uuid := util.RandomHex(32)
 	os.Mkdir("./out/generations", 0777)
@@ -60,7 +60,7 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generat
 			break
 		}
 
-		parents := c.EvalInline(fountain, i, inputs, uuid)
+		parents := c.EvalInline(fountain, i, inputs, threshold, uuid)
 
 		children := []*ProgramInstance{}
 		if len(parents) > 0 && i != generations-1 {
@@ -75,12 +75,13 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generat
 			}
 			c.Programs = append(parents, children...)
 			prgm := c.Fitest()
+			if c.VerboseMode {
+				//fmt.Printf(".")
+				fmt.Printf("\rScore - %3.2f Generation %v", (1.0-prgm.Score)*100.0, i)
+			}
 			if prgm != nil && prgm.Score < 0.1 {
 				break
 			}
-		}
-		if c.VerboseMode {
-			fmt.Printf(".")
 		}
 		i++
 	}
@@ -91,7 +92,7 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, inputs, population, generat
 	return uuid, c.Fitest()
 }
 
-func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid string) Programs {
+func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, threshold float64, uuid string) Programs {
 	path := "./out/generations/" + uuid + "/" + strconv.Itoa(generation)
 	os.Mkdir(path, 0777)
 
@@ -176,7 +177,7 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 			score := 0.0
 			for i, _ := range assert {
 				diff := math.Abs(assert[i] - output[i])
-				if diff > 500 || math.IsNaN(output[i]) {
+				if diff > threshold || math.IsNaN(output[i]) {
 					score++
 				}
 			}
@@ -188,9 +189,19 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 	sort.Sort(c.Programs)
 	// Top 30%
 	limit := validPrograms / 3
-	parents := make(Programs, limit)
+	variance := limit / 3
+	parents := make(Programs, limit+variance)
 	for i := 0; i < limit; i++ {
 		parents[i] = c.Programs[i]
+	}
+	for i := limit; i < limit+variance; i++ {
+		pgm := &ProgramInstance{
+			Program:    program.New(inputs),
+			ID:         util.RandomHex(16),
+			Generation: generation,
+			Score:      math.MaxFloat64,
+		}
+		parents[i] = pgm
 	}
 	return parents
 }
