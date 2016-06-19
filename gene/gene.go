@@ -16,9 +16,10 @@ const (
 )
 
 type Gene interface {
+	Bytes() []byte
 	Eq(Gene) bool
-	Clone() []byte
-	Heal() []byte
+	Clone() Gene
+	Heal() Gene
 	Len() int
 	At(int) byte
 	MarshalTree() (*GeneNode, error)

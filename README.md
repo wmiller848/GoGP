@@ -238,12 +238,14 @@ In anycase, the process currently works as follows:
 
 ## Road Map ##
 
-Some items that would be great to have, in a rough order:
+Some items that would be great to have and being worked on, in a rough order:
 
+* Getting the Test Suite up to date
+* Much better data injestion and meta classification
 * Some parallelism for running the generations
 * Network io support for generated programs so you can send them data via tcp
 * Sexual crossover
-* Support outputing programs in many different languages
+* Support outputing programs in many different languages and binary
 * Generating a lib file instead of a program
 * More then just math genes, maybe syscall genes for fuzzing :)
 

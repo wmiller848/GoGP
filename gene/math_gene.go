@@ -20,7 +20,7 @@ func (g MathGene) Eq(ng Gene) bool {
 	return true
 }
 
-func (g MathGene) Clone() MathGene {
+func (g MathGene) Clone() Gene {
 	hg := MathGene{}
 	for i, _ := range g {
 		if g[i] != 0x00 {
@@ -41,10 +41,10 @@ func (g MathGene) At(i int) byte {
 	return g[i]
 }
 
-func (g MathGene) Heal() MathGene {
+func (g MathGene) Heal() Gene {
 	healed := []byte{}
 	valid := false
-	gne := g.Clone()
+	gne := g.Clone().Bytes()
 	cursor := CursorNil
 	cursorScope := CursorNil
 	scope := 0
@@ -140,10 +140,8 @@ func (g MathGene) Heal() MathGene {
 		}
 		break
 	}
-	if cursorScope == CursorScopeStart {
-		for i := 0; i < scope; i++ {
-			healed = append(healed, byte('}'))
-		}
+	for i := 0; i < scope; i++ {
+		healed = append(healed, byte('}'))
 	}
 	return MathGene(healed).Clone()
 }

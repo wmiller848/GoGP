@@ -17,7 +17,6 @@ type Program struct {
 }
 
 func New(count int) *Program {
-	bases := [4]dna.Base{0x00, 0x40, 0x80, 0xc0}
 	codons := []dna.Codon{
 		dna.Codon("&"), dna.Codon("|"), dna.Codon("^"),
 		dna.Codon("+"), dna.Codon("-"), dna.Codon("*"), dna.Codon("/"),
@@ -29,7 +28,7 @@ func New(count int) *Program {
 	for i := 0; i < count; i++ {
 		codons = append(codons, dna.Codon(gene.Variable(i)))
 	}
-	blk, _ := dna.NewBlock4x3(bases, codons)
+	blk, _ := dna.NewBlock4x3(dna.Block4x3Bases, codons)
 	d := blk.Random()
 	tplBytes, _ := ioutil.ReadFile("./program/main.coffee")
 	return &Program{
@@ -51,7 +50,7 @@ func (p *Program) MarshalProgram() ([]byte, error) {
 	gns, _ := p.DNA.MarshalGenes()
 	mathGns := gene.MathGene(gns).Heal()
 
-	if len(mathGns) == 0 {
+	if len(mathGns.Bytes()) == 0 {
 		return nil, errors.New("DNA contains no genes")
 	}
 	//=====
