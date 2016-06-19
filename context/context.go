@@ -91,11 +91,6 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, i
 }
 
 func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, threshold float64, uuid string) Programs {
-	//path := "./out/generations/" + uuid + "/" + strconv.Itoa(generation)
-	//os.Mkdir(path, 0777)
-
-	//		* Each testBuf row ->
-	//			* compute average score
 	validPrograms := 0
 	tap := fountain.Multiplex().Tap()
 	var data []byte
@@ -148,11 +143,12 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, thre
 	sort.Sort(c.Programs)
 	// Top 30%
 	limit := validPrograms / 3
-	variance := limit / 3
 	parents := make(Programs, limit+variance)
 	for i := 0; i < limit; i++ {
 		parents[i] = c.Programs[i]
 	}
+	// Extra random newbies we throw in
+	variance := limit / 3
 	for i := limit; i < limit+variance; i++ {
 		pgm := &ProgramInstance{
 			Program:    program.New(inputs),
