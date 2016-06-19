@@ -26,6 +26,14 @@ A Go implementation of a 'DNA' based Genetic Programmer.
       Default: true
       Required: false
 
+`-t`  Threshold: Float value for how close output must be to training data.
+      Default: 500.0
+      Required: false
+
+`-s`  Score: Float value for desired percentage score of program. 0.10 = 10%
+      Default: 0.90
+      Required: false
+
 This will output the contents of a [CoffeScript](https://github.com/jashkenas/coffeescript) program that evolved to match the input and desired output.
 
 The contents of `some.dat` looks like this:

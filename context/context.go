@@ -44,7 +44,7 @@ func (c *Context) Verbose() {
 	c.VerboseMode = !c.VerboseMode
 }
 
-func (c *Context) RunWithInlineScore(pipe io.Reader, threshold float64, inputs, population, generations int, auto bool) (string, *ProgramInstance) {
+func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, inputs, population, generations int, auto bool) (string, *ProgramInstance) {
 	//os.Mkdir("./out", 0777)
 	uuid := util.RandomHex(32)
 	//os.Mkdir("./out/generations", 0777)
@@ -78,7 +78,7 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold float64, inputs, 
 				//fmt.Printf(".")
 				fmt.Printf("\rScore - %3.2f Generation %v", (1.0-prgm.Score)*100.0, i)
 			}
-			if prgm != nil && (1.0-prgm.Score) > 0.95 {
+			if prgm != nil && (1.0-prgm.Score) > score {
 				break
 			}
 		}

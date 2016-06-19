@@ -15,7 +15,7 @@ func score(output int) int {
 	return 0
 }
 
-func run(pipe io.Reader, threshold float64, inputs, population, generations int, auto, verbose bool) error {
+func run(pipe io.Reader, threshold, score float64, inputs, population, generations int, auto, verbose bool) error {
 	if inputs <= 0 {
 		return errors.New("Count mut be greater then 0")
 	}
@@ -29,7 +29,7 @@ func run(pipe io.Reader, threshold float64, inputs, population, generations int,
 			fmt.Println("Learning from population of", population, "over", generations, "generations for", inputs, "inputs")
 		}
 	}
-	uuid, fitest := ctx.RunWithInlineScore(pipe, threshold, inputs, population, generations, auto)
+	uuid, fitest := ctx.RunWithInlineScore(pipe, threshold, score, inputs, population, generations, auto)
 	prgm, _ := fitest.MarshalProgram()
 	if verbose {
 		fmt.Println(uuid)
@@ -60,6 +60,12 @@ func main() {
 					Usage:  "Float value for how close the output needs to be to the training data",
 					EnvVar: "GOGP_THRESHOLD",
 					Value:  500.0,
+				},
+				cli.Float64Flag{
+					Name:   "score, s",
+					Usage:  "Float value for desired percentage score of program. 0.10 = 10%",
+					EnvVar: "GOGP_SCORE",
+					Value:  0.90,
 				},
 				cli.IntFlag{
 					Name:   "population, p",
@@ -107,7 +113,7 @@ func main() {
 				} else {
 					fmt.Println("Too many arguments, provide path to one file.")
 				}
-				run(pipe, c.Float64("threshold"), c.Int("count"), c.Int("population"), c.Int("generations"), !c.Bool("auto"), c.Bool("verbose"))
+				run(pipe, c.Float64("threshold"), c.Float64("score"), c.Int("count"), c.Int("population"), c.Int("generations"), !c.Bool("auto"), c.Bool("verbose"))
 			},
 		},
 	}
