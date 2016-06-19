@@ -40,7 +40,7 @@ func (n *GeneNode) Eval(inputs ...float64) float64 {
 	for _, child := range n.Children {
 		_val := child.Eval(inputs...)
 		if math.IsNaN(_val) {
-			continue
+			return val
 		}
 		switch n.Value {
 		case "*":

@@ -78,7 +78,7 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold float64, inputs, 
 				//fmt.Printf(".")
 				fmt.Printf("\rScore - %3.2f Generation %v", (1.0-prgm.Score)*100.0, i)
 			}
-			if prgm != nil && (1.0-prgm.Score) > 0.925 {
+			if prgm != nil && (1.0-prgm.Score) > 0.95 {
 				break
 			}
 		}

@@ -185,7 +185,7 @@ func (d *DNA) Sequence(codexGigas CodexGigas) chan *Sequence {
 					seq := Sequence{
 						Codex:    codexDecoded,
 						CodexID:  codexID,
-						Index:    index,
+						Index:    index + codexID,
 						Elements: elements,
 					}
 					chanSeq <- &seq
