@@ -133,98 +133,17 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, thre
 							}
 						}
 					}
-					out, _ := tree.Eval(inputFloats...)
+					out := tree.Eval(inputFloats...)
 					diff := math.Abs(out - assertFloat)
 					//fmt.Println(prgm.ID, inputFloats, out, assertFloat, diff)
-					if diff > threshold || math.IsNaN(out) {
+					if diff >= threshold || math.IsNaN(out) {
 						wrong++
 					}
 				}
 			}
 		}
 		prgm.Score = float64(wrong) / float64(len(lines))
-		//fmt.Println(prgm.Score)
 		validPrograms++
-		//cmdStr := path + "/" + prgm.ID
-		//cmd := exec.Command("coffee", cmdStr)
-		//stderrBuffer := NewBuffer()
-		//cmd.Stderr = stderrBuffer
-		//stdoutBuffer := NewBuffer()
-		//cmd.Stdout = stdoutBuffer
-		//// Parse out the asserted correct value from the data stream
-		//stdinBuffer := NewBuffer()
-		//var stdinTap chan []byte
-		//pipe := fountain.Multiplex()
-		//cmd.Stdin, stdinTap = stdinBuffer.Pipe(pipe)
-		//var data []byte
-		//var assert []float64
-		//for {
-		//d, open := <-stdinTap
-		//if open == false {
-		//break
-		//}
-		//data = append(data, d...)
-		//}
-		//lines := bytes.Split(data, []byte("\n"))
-		//for i, _ := range lines {
-		//if len(lines[i]) > 0 {
-		//nums := bytes.Split(lines[i], []byte(" "))
-		//if len(nums) >= inputs {
-		//num, err := strconv.ParseFloat(string(nums[inputs]), 64)
-		//if err == nil {
-		//assert = append(assert, num)
-		//}
-		//}
-		//}
-		//}
-		////
-		//prgmBytes, _ := prgm.MarshalProgram()
-		////fmt.Println("Command - '" + cmdStr + "'")
-		//err := ioutil.WriteFile(path+"/"+prgm.ID, prgmBytes, 0555)
-		//if err != nil {
-		//fmt.Println(err.Error())
-		//}
-		//err = cmd.Start()
-		//if err != nil {
-		//fmt.Println(err.Error())
-		//}
-		//err = cmd.Wait()
-		//if err != nil {
-		////fmt.Println(err.Error())
-		//}
-
-		//stdoutTap := stdoutBuffer.Tap()
-		//stdoutBuffer.Close()
-		//data = []byte{}
-		//output := []float64{}
-		//for {
-		//d, open := <-stdoutTap
-		//if open == false {
-		//break
-		//}
-		//data = append(data, d...)
-		//}
-		//lines = bytes.Split(data, []byte("\n"))
-		//for i, _ := range lines {
-		//num, err := strconv.ParseFloat(string(lines[i]), 64)
-		//if err == nil {
-		//output = append(output, num)
-		//} else {
-		//data = append(data, lines[i]...)
-		//}
-		//}
-		//// Compair output to assert
-		//if len(assert) == len(output) && len(assert) > 0 {
-		//score := 0.0
-		//for i, _ := range assert {
-		//diff := math.Abs(assert[i] - output[i])
-		//if diff > threshold || math.IsNaN(output[i]) {
-		//score++
-		//}
-		//}
-		//prgm.Score = score / float64(len(assert))
-		//validPrograms++
-		//}
 	}
 
 	sort.Sort(c.Programs)

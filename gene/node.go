@@ -35,15 +35,13 @@ func (n *GeneNode) MarshalExpression() ([]byte, error) {
 	return bytes, nil
 }
 
-func (n *GeneNode) Eval(inputs ...float64) (float64, error) {
-	//fmt.Println(n.Value)
+func (n *GeneNode) Eval(inputs ...float64) float64 {
 	val := math.NaN()
 	for _, child := range n.Children {
-		_val, _ := child.Eval(inputs...)
+		_val := child.Eval(inputs...)
 		if math.IsNaN(_val) {
 			continue
 		}
-		//if i != len(n.Children)-1 {
 		switch n.Value {
 		case "*":
 			if math.IsNaN(val) {
@@ -88,12 +86,12 @@ func (n *GeneNode) Eval(inputs ...float64) (float64, error) {
 				val = float64(uint64(val) ^ uint64(_val))
 			}
 		}
-		//}
 	}
 	if len(n.Children) == 0 {
 		var err error
 		val, err = strconv.ParseFloat(n.Value, 64)
 		if err != nil {
+			// TODO :: Make this dynamic
 			switch n.Value {
 			case "$a":
 				val = inputs[0]
@@ -106,5 +104,5 @@ func (n *GeneNode) Eval(inputs ...float64) (float64, error) {
 			}
 		}
 	}
-	return val, nil
+	return val
 }
