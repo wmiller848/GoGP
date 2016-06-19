@@ -247,7 +247,7 @@ Some items that would be great to have, in a rough order:
 * Generating a lib file instead of a program
 * More then just math genes, maybe syscall genes for fuzzing :)
 
-## Legal Foo and Licences ##
+## Legal & Licences ##
 
 This code is licenced under a general BSD Licences, basicaly use
 as you see fit commercialy or not, don't take credit for work you

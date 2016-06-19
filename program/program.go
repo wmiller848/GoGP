@@ -49,8 +49,7 @@ func (p *Program) Mutate() *Program {
 func (p *Program) MarshalProgram() ([]byte, error) {
 	pgm := p.Template
 	gns, _ := p.DNA.MarshalGenes()
-	mathGns := gene.MathGene(gns)
-	mathGns = mathGns.Heal()
+	mathGns := gene.MathGene(gns).Heal()
 
 	if len(mathGns) == 0 {
 		return nil, errors.New("DNA contains no genes")

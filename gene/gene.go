@@ -47,6 +47,11 @@ func Variable(j int) string {
 	return tmpl
 }
 
+// TODO
+func VariableLookup(v string) int {
+	return 0
+}
+
 func VariableTemplate(count int) string {
 	tmpl := ""
 	for i := 0; i < count; i++ {

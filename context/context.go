@@ -53,6 +53,7 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, i
 	var i int = 0
 	time.Sleep(500 * time.Millisecond)
 	fountain := Multiplex(pipe)
+	max := 0
 	for {
 		if i >= generations && !auto {
 			break
@@ -75,7 +76,23 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, i
 			prgm := c.Fitest()
 			if c.VerboseMode {
 				//fmt.Printf(".")
-				fmt.Printf("\rScore - %3.2f Generation %v", (1.0-prgm.Score)*100.0, i)
+				gns, _ := prgm.DNA.MarshalGenes()
+				mathGns := gene.MathGene(gns).Heal()
+				tree, _ := mathGns.MarshalTree()
+				exp, _ := tree.MarshalExpression()
+				str := fmt.Sprintf("\rScore: %3.2f Generation: %v Expression: %v", (1.0-prgm.Score)*100.0, i, string(exp))
+				strByts := []byte(str)
+				if len(strByts) > max {
+					max = len(strByts)
+				} else {
+					pad := make([]byte, max-len(strByts))
+					for j := 0; j < len(pad); j++ {
+						pad[j] = byte(' ')
+					}
+					strByts = append(strByts, pad...)
+				}
+				str = string(strByts)
+				fmt.Printf(str)
 			}
 			if prgm != nil && (1.0-prgm.Score) > score {
 				break
@@ -143,12 +160,12 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, thre
 	sort.Sort(c.Programs)
 	// Top 30%
 	limit := validPrograms / 3
+	// Extra random newbies we throw in
+	variance := limit / 3
 	parents := make(Programs, limit+variance)
 	for i := 0; i < limit; i++ {
 		parents[i] = c.Programs[i]
 	}
-	// Extra random newbies we throw in
-	variance := limit / 3
 	for i := limit; i < limit+variance; i++ {
 		pgm := &ProgramInstance{
 			Program:    program.New(inputs),
