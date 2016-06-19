@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"os"
 	"sort"
 	"strconv"
 	"time"
@@ -92,8 +91,8 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, i
 }
 
 func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, threshold float64, uuid string) Programs {
-	path := "./out/generations/" + uuid + "/" + strconv.Itoa(generation)
-	os.Mkdir(path, 0777)
+	//path := "./out/generations/" + uuid + "/" + strconv.Itoa(generation)
+	//os.Mkdir(path, 0777)
 
 	//		* Each testBuf row ->
 	//			* compute average score
@@ -107,6 +106,7 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, thre
 		}
 		data = append(data, d...)
 	}
+	lines := bytes.Split(data, []byte("\n"))
 	for i, _ := range c.Programs {
 		prgm := c.Programs[i]
 		gns, _ := prgm.DNA.MarshalGenes()
@@ -116,7 +116,6 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, thre
 			continue
 		}
 		wrong := 0
-		lines := bytes.Split(data, []byte("\n"))
 		for i, _ := range lines {
 			if len(lines[i]) > 0 {
 				nums := bytes.Split(lines[i], []byte(" "))
