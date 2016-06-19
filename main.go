@@ -33,6 +33,7 @@ func run(pipe io.Reader, threshold float64, inputs, population, generations int,
 	prgm, _ := fitest.MarshalProgram()
 	if verbose {
 		fmt.Println(uuid)
+		fmt.Println(fitest.ID)
 		fmt.Printf("%+v\n", fitest.Score)
 	}
 	fmt.Printf("%+v\n", string(prgm))

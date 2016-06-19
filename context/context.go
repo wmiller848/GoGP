@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"os"
-	"os/exec"
 	"sort"
 	"strconv"
 	"time"
 
+	"github.com/wmiller848/GoGP/gene"
 	"github.com/wmiller848/GoGP/program"
 	"github.com/wmiller848/GoGP/util"
 )
@@ -46,11 +45,11 @@ func (c *Context) Verbose() {
 }
 
 func (c *Context) RunWithInlineScore(pipe io.Reader, threshold float64, inputs, population, generations int, auto bool) (string, *ProgramInstance) {
-	os.Mkdir("./out", 0777)
+	//os.Mkdir("./out", 0777)
 	uuid := util.RandomHex(32)
-	os.Mkdir("./out/generations", 0777)
-	os.RemoveAll("./out/generations/" + uuid)
-	os.Mkdir("./out/generations/"+uuid, 0777)
+	//os.Mkdir("./out/generations", 0777)
+	//os.RemoveAll("./out/generations/" + uuid)
+	//os.Mkdir("./out/generations/"+uuid, 0777)
 	c.InitPopulation(inputs, population)
 	var i int = 0
 	time.Sleep(500 * time.Millisecond)
@@ -79,7 +78,7 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold float64, inputs, 
 				//fmt.Printf(".")
 				fmt.Printf("\rScore - %3.2f Generation %v", (1.0-prgm.Score)*100.0, i)
 			}
-			if prgm != nil && prgm.Score < 0.1 {
+			if prgm != nil && (1.0-prgm.Score) > 0.925 {
 				break
 			}
 		}
@@ -99,91 +98,133 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, thre
 	//		* Each testBuf row ->
 	//			* compute average score
 	validPrograms := 0
+	tap := fountain.Multiplex().Tap()
+	var data []byte
+	for {
+		d, open := <-tap
+		if open == false {
+			break
+		}
+		data = append(data, d...)
+	}
 	for i, _ := range c.Programs {
 		prgm := c.Programs[i]
-		cmdStr := path + "/" + prgm.ID
-		cmd := exec.Command("coffee", cmdStr)
-		//
-		stderrBuffer := NewBuffer()
-		cmd.Stderr = stderrBuffer
-		//
-		stdoutBuffer := NewBuffer()
-		cmd.Stdout = stdoutBuffer
-		// Parse out the asserted correct value from the data stream
-		stdinBuffer := NewBuffer()
-		var stdinTap chan []byte
-		pipe := fountain.Multiplex()
-		cmd.Stdin, stdinTap = stdinBuffer.Pipe(pipe)
-		var data []byte
-		var assert []float64
-		// TODO :: get io streaming to work
-		for {
-			d, open := <-stdinTap
-			if open == false {
-				break
-			}
-			data = append(data, d...)
+		gns, _ := prgm.DNA.MarshalGenes()
+		mathGns := gene.MathGene(gns).Heal()
+		tree, _ := mathGns.MarshalTree()
+		if tree == nil {
+			continue
 		}
+		wrong := 0
 		lines := bytes.Split(data, []byte("\n"))
 		for i, _ := range lines {
 			if len(lines[i]) > 0 {
 				nums := bytes.Split(lines[i], []byte(" "))
 				if len(nums) >= inputs {
-					num, err := strconv.ParseFloat(string(nums[inputs]), 64)
-					if err == nil {
-						assert = append(assert, num)
+					inputFloats := []float64{}
+					assertFloat := math.NaN()
+					for j, numByts := range nums {
+						num, err := strconv.ParseFloat(string(numByts), 64)
+						if err == nil {
+							if j < inputs {
+								inputFloats = append(inputFloats, num)
+							} else {
+								assertFloat = num
+							}
+						}
+					}
+					out, _ := tree.Eval(inputFloats...)
+					diff := math.Abs(out - assertFloat)
+					//fmt.Println(prgm.ID, inputFloats, out, assertFloat, diff)
+					if diff > threshold || math.IsNaN(out) {
+						wrong++
 					}
 				}
 			}
 		}
-		//
-		prgmBytes, _ := prgm.MarshalProgram()
-		//fmt.Println("Command - '" + cmdStr + "'")
-		err := ioutil.WriteFile(path+"/"+prgm.ID, prgmBytes, 0555)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		err = cmd.Start()
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		err = cmd.Wait()
-		if err != nil {
-			//fmt.Println(err.Error())
-		}
+		prgm.Score = float64(wrong) / float64(len(lines))
+		//fmt.Println(prgm.Score)
+		validPrograms++
+		//cmdStr := path + "/" + prgm.ID
+		//cmd := exec.Command("coffee", cmdStr)
+		//stderrBuffer := NewBuffer()
+		//cmd.Stderr = stderrBuffer
+		//stdoutBuffer := NewBuffer()
+		//cmd.Stdout = stdoutBuffer
+		//// Parse out the asserted correct value from the data stream
+		//stdinBuffer := NewBuffer()
+		//var stdinTap chan []byte
+		//pipe := fountain.Multiplex()
+		//cmd.Stdin, stdinTap = stdinBuffer.Pipe(pipe)
+		//var data []byte
+		//var assert []float64
+		//for {
+		//d, open := <-stdinTap
+		//if open == false {
+		//break
+		//}
+		//data = append(data, d...)
+		//}
+		//lines := bytes.Split(data, []byte("\n"))
+		//for i, _ := range lines {
+		//if len(lines[i]) > 0 {
+		//nums := bytes.Split(lines[i], []byte(" "))
+		//if len(nums) >= inputs {
+		//num, err := strconv.ParseFloat(string(nums[inputs]), 64)
+		//if err == nil {
+		//assert = append(assert, num)
+		//}
+		//}
+		//}
+		//}
+		////
+		//prgmBytes, _ := prgm.MarshalProgram()
+		////fmt.Println("Command - '" + cmdStr + "'")
+		//err := ioutil.WriteFile(path+"/"+prgm.ID, prgmBytes, 0555)
+		//if err != nil {
+		//fmt.Println(err.Error())
+		//}
+		//err = cmd.Start()
+		//if err != nil {
+		//fmt.Println(err.Error())
+		//}
+		//err = cmd.Wait()
+		//if err != nil {
+		////fmt.Println(err.Error())
+		//}
 
-		stdoutTap := stdoutBuffer.Tap()
-		stdoutBuffer.Close()
-		data = []byte{}
-		output := []float64{}
-		for {
-			d, open := <-stdoutTap
-			if open == false {
-				break
-			}
-			data = append(data, d...)
-		}
-		lines = bytes.Split(data, []byte("\n"))
-		for i, _ := range lines {
-			num, err := strconv.ParseFloat(string(lines[i]), 64)
-			if err == nil {
-				output = append(output, num)
-			} else {
-				data = append(data, lines[i]...)
-			}
-		}
-		// Compair output to assert
-		if len(assert) == len(output) && len(assert) > 0 {
-			score := 0.0
-			for i, _ := range assert {
-				diff := math.Abs(assert[i] - output[i])
-				if diff > threshold || math.IsNaN(output[i]) {
-					score++
-				}
-			}
-			prgm.Score = score / float64(len(assert))
-			validPrograms++
-		}
+		//stdoutTap := stdoutBuffer.Tap()
+		//stdoutBuffer.Close()
+		//data = []byte{}
+		//output := []float64{}
+		//for {
+		//d, open := <-stdoutTap
+		//if open == false {
+		//break
+		//}
+		//data = append(data, d...)
+		//}
+		//lines = bytes.Split(data, []byte("\n"))
+		//for i, _ := range lines {
+		//num, err := strconv.ParseFloat(string(lines[i]), 64)
+		//if err == nil {
+		//output = append(output, num)
+		//} else {
+		//data = append(data, lines[i]...)
+		//}
+		//}
+		//// Compair output to assert
+		//if len(assert) == len(output) && len(assert) > 0 {
+		//score := 0.0
+		//for i, _ := range assert {
+		//diff := math.Abs(assert[i] - output[i])
+		//if diff > threshold || math.IsNaN(output[i]) {
+		//score++
+		//}
+		//}
+		//prgm.Score = score / float64(len(assert))
+		//validPrograms++
+		//}
 	}
 
 	sort.Sort(c.Programs)

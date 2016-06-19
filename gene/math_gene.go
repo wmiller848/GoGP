@@ -2,6 +2,10 @@ package gene
 
 type MathGene GenericGene
 
+func (g MathGene) Bytes() []byte {
+	return []byte(g)
+}
+
 func (g MathGene) Eq(ng Gene) bool {
 	lg := len(g)
 	if lg != ng.Len() {
@@ -16,7 +20,7 @@ func (g MathGene) Eq(ng Gene) bool {
 	return true
 }
 
-func (g MathGene) Clone() []byte {
+func (g MathGene) Clone() MathGene {
 	hg := MathGene{}
 	for i, _ := range g {
 		if g[i] != 0x00 {
@@ -37,7 +41,7 @@ func (g MathGene) At(i int) byte {
 	return g[i]
 }
 
-func (g MathGene) Heal() []byte {
+func (g MathGene) Heal() MathGene {
 	healed := []byte{}
 	valid := false
 	gne := g.Clone()
