@@ -174,9 +174,6 @@ func (d *DNA) SpliceSequence(chanSeqs [2]chan *Sequence) *SequenceNode {
 		if head == nil || (head2 != nil && head.Index > head2.Index) {
 			head = head2
 		}
-		if head == nil {
-			break
-		}
 
 		if j == 0 {
 			headYing = head
@@ -187,13 +184,9 @@ func (d *DNA) SpliceSequence(chanSeqs [2]chan *Sequence) *SequenceNode {
 
 	var dnaSeq *SequenceNode
 	if headYing != nil && headYang != nil {
-
-		var dnaSeqYing *SequenceNode
-		var dnaSeqYang *SequenceNode
-		dnaSeqYing = headYing.Clone()
-		dnaSeqYang = headYang.Clone()
+		dnaSeqYing := headYing.Clone()
+		dnaSeqYang := headYang.Clone()
 		var i int = -1
-
 		for {
 			if i < dnaSeqYing.Index && dnaSeqYing.Index < dnaSeqYang.Index {
 				if i == -1 {

@@ -19,7 +19,7 @@ func ConstructStrand(codex Codex) []byte {
 	return strand
 }
 
-func TestDNASingleStrand(t *testing.T) {
+func TestDNASingleStrandYing(t *testing.T) {
 	// 2nd frame reading
 	ying := ConstructStrand(Codex{
 		[]byte{0xc0},
@@ -28,6 +28,30 @@ func TestDNASingleStrand(t *testing.T) {
 		End,
 	})
 	yang := []byte{}
+	blk := InitBlock(t)
+	dna := &DNA{
+		StrandYing: gene.GenericGene(ying),
+		StrandYang: gene.GenericGene(yang),
+		Block:      blk,
+	}
+
+	gns, err := dna.MarshalGenes()
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	AssertStr(t, string(gns), "aabbabb")
+}
+
+func TestDNASingleStrandYang(t *testing.T) {
+	ying := []byte{}
+	// 2nd frame reading
+	yang := ConstructStrand(Codex{
+		[]byte{0xc0},
+		Start,
+		A, A, B, B, A, B, B,
+		End,
+	})
 	blk := InitBlock(t)
 	dna := &DNA{
 		StrandYing: gene.GenericGene(ying),
