@@ -11,16 +11,6 @@ var A []byte = []byte{0x40, 0x00, 0x00}
 var B []byte = []byte{0x80, 0x00, 0x00}
 var End []byte = []byte{0xc0, 0x00, 0x00}
 
-//func InitBlock(t *testing.T) *Block4x3 {
-//codex := Codex{Codon("a"), Codon("b")}
-//blk, err := NewBlock4x3(Block4x3Bases, codex)
-//if err != nil {
-//t.Error(err.Error())
-//return nil
-//}
-//return blk
-//}
-
 func ConstructStrand(codex Codex) []byte {
 	strand := []byte{}
 	for _, codon := range codex {
