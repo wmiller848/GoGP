@@ -1,6 +1,8 @@
 package dna
 
 import (
+	"math"
+
 	"github.com/wmiller848/GoGP/gene"
 	"github.com/wmiller848/GoGP/util"
 )
@@ -185,46 +187,53 @@ func (d *DNA) SpliceSequence(chanSeqs [2]chan *Sequence) *SequenceNode {
 
 	var dnaSeq *SequenceNode
 	if headYing != nil && headYang != nil {
-		dnaSeqYing := headYing.Clone()
-		dnaSeqYang := headYang.Clone()
-		i := 0
+
+		var dnaSeqYing *SequenceNode
+		var dnaSeqYang *SequenceNode
+		dnaSeqYing = headYing.Clone()
+		dnaSeqYang = headYang.Clone()
+		var i int = -1
+
 		for {
 			if i < dnaSeqYing.Index && dnaSeqYing.Index < dnaSeqYang.Index {
+				if i == -1 {
+					i = 0
+				}
 				if dnaSeq == nil {
 					dnaSeq = dnaSeqYing.Clone()
 					dnaSeq.Child = nil
-					i += dnaSeq.Index + dnaSeq.Elements
+					i += dnaSeqYing.Elements
 				} else {
-					clone := dnaSeqYang.Clone()
+					clone := dnaSeqYing.Clone()
 					dnaSeq = dnaSeq.Merge(clone.Sequence)
-					i += clone.Index + clone.Elements
-				}
-				if dnaSeqYing.Child != nil {
-					dnaSeqYing = dnaSeqYing.Child
+					i += clone.Elements
 				}
 			} else if i < dnaSeqYang.Index && dnaSeqYang.Index < dnaSeqYing.Index {
+				if i == -1 {
+					i = 0
+				}
 				if dnaSeq == nil {
 					dnaSeq = dnaSeqYang.Clone()
 					dnaSeq.Child = nil
-					i += dnaSeq.Index + dnaSeq.Elements
+					i += dnaSeq.Elements
 				} else {
 					clone := dnaSeqYang.Clone()
 					dnaSeq = dnaSeq.Merge(clone.Sequence)
-					i += clone.Index + clone.Elements
+					i += clone.Elements
 				}
-				if dnaSeqYang.Child != nil {
-					dnaSeqYang = dnaSeqYang.Child
-				}
+			}
+			if dnaSeqYing.Child == nil && dnaSeqYang.Child == nil {
+				break
+			}
+			if dnaSeqYing.Child != nil {
+				dnaSeqYing = dnaSeqYing.Child
 			} else {
-				if dnaSeqYing.Child != nil {
-					dnaSeqYing = dnaSeqYing.Child
-				}
-				if dnaSeqYang.Child != nil {
-					dnaSeqYang = dnaSeqYang.Child
-				}
-				if dnaSeqYing.Child == nil && dnaSeqYang.Child == nil {
-					break
-				}
+				dnaSeqYing.Index = math.MaxInt64
+			}
+			if dnaSeqYang.Child != nil {
+				dnaSeqYang = dnaSeqYang.Child
+			} else {
+				dnaSeqYang.Index = math.MaxInt64
 			}
 		}
 	} else if headYing != nil {

@@ -6,8 +6,8 @@ func AssertBlock(b Block) {}
 
 func AssertStr(t *testing.T, a, b string) bool {
 	if a != b {
-		t.Error("Expected " + b)
-		t.Error("Got:" + a)
+		t.Error("Expected: " + b)
+		t.Error("Got: " + a)
 		return false
 	}
 	return true
