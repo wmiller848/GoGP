@@ -1,7 +1,9 @@
 # GoGP #
 ### Go Genetic Programing ###
 
-A Go implementation of a 'DNA' based Genetic Programmer.
+A Go implementation of a 'DNA' based Genetic Programmer. Given up to ~50
+data columns and n rows, a program can be generated that fits the dataset
+to an assigned threshold of accuracy.
 
 \*\* This software is VERY beta, keep that in mind. \*\*
 

@@ -91,17 +91,7 @@ func (n *GeneNode) Eval(inputs ...float64) float64 {
 		var err error
 		val, err = strconv.ParseFloat(n.Value, 64)
 		if err != nil {
-			// TODO :: Make this dynamic
-			switch n.Value {
-			case "$a":
-				val = inputs[0]
-			case "$b":
-				val = inputs[1]
-			case "$c":
-				val = inputs[2]
-			case "$d":
-				val = inputs[3]
-			}
+			val = inputs[VariableLookup(n.Value)]
 		}
 	}
 	return val

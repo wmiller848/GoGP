@@ -2,6 +2,7 @@ package gene
 
 import (
 	"strconv"
+	"strings"
 )
 
 const (
@@ -48,8 +49,21 @@ func Variable(j int) string {
 	return tmpl
 }
 
-// TODO
 func VariableLookup(v string) int {
+	if v != "" && []byte(v)[0] == byte('$') {
+		str := string(v[1:])
+		strArry := strings.Split(str, "")
+		index := 0
+		for q, j := range strArry {
+			y := len(strArry) - q - 1
+			for x, ch := range blockVars {
+				if string(ch) == j {
+					index += x + (y * len(blockVars))
+				}
+			}
+		}
+		return index
+	}
 	return 0
 }
 
