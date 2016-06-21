@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 
 	// "github.com/urfave/cli"
 	"github.com/codegangsta/cli"
@@ -21,6 +22,16 @@ func run(pipe io.Reader, threshold, score float64, inputs, population, generatio
 	}
 
 	ctx := context.New()
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for range c {
+			fitest := ctx.Fitest()
+			prgm, _ := fitest.MarshalProgram()
+			fmt.Printf("%+v\n", string(prgm))
+			os.Exit(0)
+		}
+	}()
 	if verbose {
 		ctx.Verbose()
 		if auto {

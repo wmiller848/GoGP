@@ -20,6 +20,13 @@ func Hex(data []byte) string {
 	return hex.EncodeToString(data)
 }
 
+func Unhex(h string) []byte {
+	bytes, err := hex.DecodeString(h)
+	if err != nil {
+	}
+	return bytes
+}
+
 func RandomHex(size int) string {
 	return Hex(Random(size))
 }

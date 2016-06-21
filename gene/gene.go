@@ -3,6 +3,8 @@ package gene
 import (
 	"strconv"
 	"strings"
+
+	"github.com/wmiller848/GoGP/util"
 )
 
 const (
@@ -38,31 +40,35 @@ var blockVars []byte = []byte{
 
 func Variable(j int) string {
 	tmpl := "$"
-	ji := j % len(blockVars)
-	if j != 0 && ji == 0 {
-		jd := j / len(blockVars)
-		for t := 0; t < jd; t++ {
-			tmpl += string(blockVars[t])
-		}
-	}
-	tmpl += string(blockVars[ji])
+	tmpl += util.Hex([]byte{byte(j)})
+	tmpl = strings.Replace(tmpl, "0", "z", -1)
+	tmpl = strings.Replace(tmpl, "1", "y", -1)
+	tmpl = strings.Replace(tmpl, "2", "x", -1)
+	tmpl = strings.Replace(tmpl, "3", "w", -1)
+	tmpl = strings.Replace(tmpl, "4", "v", -1)
+	tmpl = strings.Replace(tmpl, "5", "u", -1)
+	tmpl = strings.Replace(tmpl, "6", "t", -1)
+	tmpl = strings.Replace(tmpl, "7", "s", -1)
+	tmpl = strings.Replace(tmpl, "8", "r", -1)
+	tmpl = strings.Replace(tmpl, "9", "q", -1)
 	return tmpl
 }
 
 func VariableLookup(v string) int {
-	if v != "" && []byte(v)[0] == byte('$') {
+	if string(v[:1]) == "$" {
 		str := string(v[1:])
-		strArry := strings.Split(str, "")
-		index := 0
-		for q, j := range strArry {
-			y := len(strArry) - q - 1
-			for x, ch := range blockVars {
-				if string(ch) == j {
-					index += x + (y * len(blockVars))
-				}
-			}
-		}
-		return index
+		str = strings.Replace(str, "z", "0", -1)
+		str = strings.Replace(str, "y", "1", -1)
+		str = strings.Replace(str, "x", "2", -1)
+		str = strings.Replace(str, "w", "3", -1)
+		str = strings.Replace(str, "v", "4", -1)
+		str = strings.Replace(str, "u", "5", -1)
+		str = strings.Replace(str, "t", "6", -1)
+		str = strings.Replace(str, "s", "7", -1)
+		str = strings.Replace(str, "r", "8", -1)
+		str = strings.Replace(str, "q", "9", -1)
+		byts := util.Unhex(str)
+		return int(byts[0])
 	}
 	return 0
 }

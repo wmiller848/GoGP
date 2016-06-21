@@ -12,29 +12,35 @@ func AssertInt(t *testing.T, a, b int) bool {
 }
 
 func TestVariable(t *testing.T) {
-	varA := Variable(0)
-	AssertStr(t, varA, "$a")
+	varA0 := Variable(0)
+	AssertStr(t, varA0, "$zz")
 
 	varB := Variable(9)
-	AssertStr(t, varB, "$j")
+	AssertStr(t, varB, "$zq")
 
 	varC := Variable(25)
-	AssertStr(t, varC, "$z")
+	AssertStr(t, varC, "$yq")
 
 	varD := Variable(26)
-	AssertStr(t, varD, "$aa")
+	AssertStr(t, varD, "$ya")
+
+	varE := Variable(27)
+	AssertStr(t, varE, "$yb")
 }
 
 func TestVariableLookup(t *testing.T) {
-	varA := Variable(0)
+	varA := "$zz"
 	AssertInt(t, VariableLookup(varA), 0)
 
-	varB := Variable(9)
+	varB := "$zq"
 	AssertInt(t, VariableLookup(varB), 9)
 
-	varC := Variable(25)
+	varC := "$yq"
 	AssertInt(t, VariableLookup(varC), 25)
 
-	varD := Variable(26)
+	varD := "$ya"
 	AssertInt(t, VariableLookup(varD), 26)
+
+	varE := "$yb"
+	AssertInt(t, VariableLookup(varE), 27)
 }

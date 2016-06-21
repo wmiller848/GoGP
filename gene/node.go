@@ -90,7 +90,7 @@ func (n *GeneNode) Eval(inputs ...float64) float64 {
 	if len(n.Children) == 0 {
 		var err error
 		val, err = strconv.ParseFloat(n.Value, 64)
-		if err != nil {
+		if err != nil && n.Value != "$" {
 			val = inputs[VariableLookup(n.Value)]
 		}
 	}
