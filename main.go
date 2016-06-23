@@ -43,9 +43,14 @@ func run(pipe io.Reader, threshold, score float64, inputs, population, generatio
 	uuid, fitest := ctx.RunWithInlineScore(pipe, threshold, score, inputs, population, generations, auto)
 	prgm, _ := fitest.MarshalProgram()
 	if verbose {
-		fmt.Println(uuid)
-		fmt.Println(fitest.ID)
-		fmt.Printf("%+v\n", fitest.Score)
+		fmt.Println("Generation ID:", uuid)
+		fmt.Println("Program ID:", fitest.ID)
+		fmt.Printf("Total Score: %3.2f\n", (1.0-fitest.Score)*100.00)
+		fmt.Println("Sub Scores:")
+		for k, grp := range fitest.Group {
+			c := float64(grp.Wrong) / float64(grp.Count)
+			fmt.Printf("%v: %3.2f (%v / %v)\n", k, (1.0-c)*100.00, grp.Count-grp.Wrong, grp.Count)
+		}
 	}
 	fmt.Printf("%+v\n", string(prgm))
 	return nil

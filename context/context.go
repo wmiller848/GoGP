@@ -21,6 +21,7 @@ type ProgramInstance struct {
 	ID         string
 	Generation int
 	Score      float64
+	Group      map[float64]*Group
 }
 
 type Programs []*ProgramInstance
@@ -35,6 +36,11 @@ type Context struct {
 	VerboseMode bool
 }
 
+type Group struct {
+	Count int
+	Wrong int
+}
+
 func New() *Context {
 	return &Context{}
 }
@@ -44,11 +50,7 @@ func (c *Context) Verbose() {
 }
 
 func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, inputs, population, generations int, auto bool) (string, *ProgramInstance) {
-	//os.Mkdir("./out", 0777)
 	uuid := util.RandomHex(32)
-	//os.Mkdir("./out/generations", 0777)
-	//os.RemoveAll("./out/generations/" + uuid)
-	//os.Mkdir("./out/generations/"+uuid, 0777)
 	c.InitPopulation(inputs, population)
 	var i int = 0
 	time.Sleep(500 * time.Millisecond)
@@ -75,7 +77,6 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, i
 			c.Programs = append(parents, children...)
 			prgm := c.Fitest()
 			if c.VerboseMode {
-				//fmt.Printf(".")
 				gns, _ := prgm.DNA.MarshalGenes()
 				mathGns := gene.MathGene(gns).Heal()
 				tree, _ := mathGns.MarshalTree()
@@ -127,7 +128,7 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, thre
 		if tree == nil {
 			continue
 		}
-		wrong := 0
+		wrong := make(map[float64]*Group)
 		for i, _ := range lines {
 			if len(lines[i]) > 0 {
 				nums := bytes.Split(lines[i], []byte(" "))
@@ -144,16 +145,30 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, thre
 							}
 						}
 					}
+					if wrong[assertFloat] == nil {
+						wrong[assertFloat] = &Group{
+							Count: 0,
+							Wrong: 0,
+						}
+					}
 					out := tree.Eval(inputFloats...)
 					diff := math.Abs(out - assertFloat)
 					//fmt.Println(prgm.ID, inputFloats, out, assertFloat, diff)
+					wrong[assertFloat].Count++
 					if diff >= threshold || math.IsNaN(out) {
-						wrong++
+						wrong[assertFloat].Wrong++
 					}
 				}
 			}
 		}
-		prgm.Score = float64(wrong) / float64(len(lines))
+		total := 0.0
+		for _, grp := range wrong {
+			c := float64(grp.Wrong) / float64(grp.Count)
+			total += c
+		}
+		total /= float64(len(wrong))
+		prgm.Score = total
+		prgm.Group = wrong
 		validPrograms++
 	}
 
