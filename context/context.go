@@ -9,26 +9,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/wmiller848/GoGP/data"
 	"github.com/wmiller848/GoGP/gene"
 	"github.com/wmiller848/GoGP/program"
 	"github.com/wmiller848/GoGP/util"
 )
 
-type ScoreFunction func(int) int
-
-type ProgramInstance struct {
-	*program.Program
-	ID         string
-	Generation int
-	Score      float64
-	Group      map[float64]*Group
-}
-
-type Programs []*ProgramInstance
-
-func (p Programs) Len() int           { return len(p) }
-func (p Programs) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-func (p Programs) Less(i, j int) bool { return p[i].Score < p[j].Score }
+//type ScoreFunction func(int) int
 
 type Context struct {
 	Population  int
@@ -36,17 +23,36 @@ type Context struct {
 	VerboseMode bool
 }
 
-type Group struct {
-	Count int
-	Wrong int
-}
-
 func New() *Context {
 	return &Context{}
 }
 
-func (c *Context) Verbose() {
+func (c *Context) Verbose() bool {
 	c.VerboseMode = !c.VerboseMode
+	return c.VerboseMode
+}
+func (c *Context) Fitest() *ProgramInstance {
+	if len(c.Programs) > 0 {
+		sort.Sort(c.Programs)
+		return c.Programs[0]
+	} else {
+		return nil
+	}
+}
+
+func (c *Context) InitPopulation(inputs, population int) {
+	c.Population = population
+	c.Programs = make(Programs, population)
+	var i int
+	for i = 0; i < population; i++ {
+		pgm := &ProgramInstance{
+			Program:    program.New(inputs),
+			ID:         util.RandomHex(16),
+			Generation: 0,
+			Score:      math.MaxFloat64,
+		}
+		c.Programs[i] = pgm
+	}
 }
 
 func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, inputs, population, generations int, auto bool) (string, *ProgramInstance) {
@@ -120,32 +126,32 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, i
 func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, threshold float64, uuid string) Programs {
 	validPrograms := 0
 	tap := fountain.Multiplex().Tap()
-	var data []byte
+	var buffer []byte
 	for {
 		d, open := <-tap
 		if open == false {
 			break
 		}
-		data = append(data, d...)
+		buffer = append(buffer, d...)
 	}
-	lines := bytes.Split(data, []byte("\n"))
-	inputFloats := []float64{}
-	assertFloats := []float64{}
-	testData := []data.TestData{}
+	lines := bytes.Split(buffer, []byte("\n"))
+	testData := []*data.TestData{}
 	for i, _ := range lines {
 		if len(lines[i]) > 0 {
 			nums := bytes.Split(lines[i], []byte(" "))
 			if len(nums) >= inputs {
+				dat := &data.TestData{}
 				for j, numByts := range nums {
 					num, err := strconv.ParseFloat(string(numByts), 64)
 					if err == nil {
 						if j < inputs {
-							inputFloats = append(inputFloats, num)
+							dat.Input = append(dat.Input, num)
 						} else {
-							assertFloats = append(assertFloats, num)
+							dat.Assert = num
 						}
 					}
 				}
+				testData = append(testData, dat)
 			}
 		}
 	}
@@ -158,21 +164,19 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, thre
 			continue
 		}
 		wrong := make(map[float64]*Group)
-		for i, dat := range testData {
-			if len(lines[i]) > 0 {
-				if wrong[assertFloat] == nil {
-					wrong[assertFloat] = &Group{
-						Count: 0,
-						Wrong: 0,
-					}
+		for _, dat := range testData {
+			if wrong[dat.Assert] == nil {
+				wrong[dat.Assert] = &Group{
+					Count: 0,
+					Wrong: 0,
 				}
-				out := tree.Eval(inputFloats...)
-				diff := math.Abs(out - assertFloat)
-				//fmt.Println(prgm.ID, inputFloats, out, assertFloat, diff)
-				wrong[assertFloat].Count++
-				if diff >= threshold || math.IsNaN(out) {
-					wrong[assertFloat].Wrong++
-				}
+			}
+			out := tree.Eval(dat.Input...)
+			diff := math.Abs(out - dat.Assert)
+			//fmt.Println(prgm.ID, inputFloats, out, assertFloat, diff)
+			wrong[dat.Assert].Count++
+			if diff >= threshold || math.IsNaN(out) {
+				wrong[dat.Assert].Wrong++
 			}
 		}
 		total := 0.0
@@ -206,27 +210,10 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, thre
 	}
 	return parents
 }
-
-func (c *Context) Fitest() *ProgramInstance {
-	if len(c.Programs) > 0 {
-		sort.Sort(c.Programs)
-		return c.Programs[0]
-	} else {
-		return nil
-	}
+func (c *Context) InlineData() []*data.TestData {
+	return []*data.TestData{}
 }
 
-func (c *Context) InitPopulation(inputs, population int) {
-	c.Population = population
-	c.Programs = make(Programs, population)
-	var i int
-	for i = 0; i < population; i++ {
-		pgm := &ProgramInstance{
-			Program:    program.New(inputs),
-			ID:         util.RandomHex(16),
-			Generation: 0,
-			Score:      math.MaxFloat64,
-		}
-		c.Programs[i] = pgm
-	}
+func (c *Context) ScoreProgram() {
+
 }
