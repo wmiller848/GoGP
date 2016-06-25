@@ -129,6 +129,26 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, thre
 		data = append(data, d...)
 	}
 	lines := bytes.Split(data, []byte("\n"))
+	inputFloats := []float64{}
+	assertFloats := []float64{}
+	testData := []data.TestData{}
+	for i, _ := range lines {
+		if len(lines[i]) > 0 {
+			nums := bytes.Split(lines[i], []byte(" "))
+			if len(nums) >= inputs {
+				for j, numByts := range nums {
+					num, err := strconv.ParseFloat(string(numByts), 64)
+					if err == nil {
+						if j < inputs {
+							inputFloats = append(inputFloats, num)
+						} else {
+							assertFloats = append(assertFloats, num)
+						}
+					}
+				}
+			}
+		}
+	}
 	for i, _ := range c.Programs {
 		prgm := c.Programs[i]
 		gns, _ := prgm.DNA.MarshalGenes()
@@ -138,35 +158,20 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, thre
 			continue
 		}
 		wrong := make(map[float64]*Group)
-		for i, _ := range lines {
+		for i, dat := range testData {
 			if len(lines[i]) > 0 {
-				nums := bytes.Split(lines[i], []byte(" "))
-				if len(nums) >= inputs {
-					inputFloats := []float64{}
-					assertFloat := math.NaN()
-					for j, numByts := range nums {
-						num, err := strconv.ParseFloat(string(numByts), 64)
-						if err == nil {
-							if j < inputs {
-								inputFloats = append(inputFloats, num)
-							} else {
-								assertFloat = num
-							}
-						}
+				if wrong[assertFloat] == nil {
+					wrong[assertFloat] = &Group{
+						Count: 0,
+						Wrong: 0,
 					}
-					if wrong[assertFloat] == nil {
-						wrong[assertFloat] = &Group{
-							Count: 0,
-							Wrong: 0,
-						}
-					}
-					out := tree.Eval(inputFloats...)
-					diff := math.Abs(out - assertFloat)
-					//fmt.Println(prgm.ID, inputFloats, out, assertFloat, diff)
-					wrong[assertFloat].Count++
-					if diff >= threshold || math.IsNaN(out) {
-						wrong[assertFloat].Wrong++
-					}
+				}
+				out := tree.Eval(inputFloats...)
+				diff := math.Abs(out - assertFloat)
+				//fmt.Println(prgm.ID, inputFloats, out, assertFloat, diff)
+				wrong[assertFloat].Count++
+				if diff >= threshold || math.IsNaN(out) {
+					wrong[assertFloat].Wrong++
 				}
 			}
 		}
