@@ -1,10 +1,9 @@
 package dna
 
 import (
-	"math"
-
 	"github.com/wmiller848/GoGP/gene"
 	"github.com/wmiller848/GoGP/util"
+	"math"
 )
 
 type DNA struct {
@@ -21,44 +20,58 @@ func (d *DNA) Mutate() *DNA {
 	}
 	// Ying
 	strandYing := gene.GenericGene{}
-	for i, _ := range dna.StrandYing {
-		codon := dna.StrandYing[i]
-		switch util.RandomNumber(0, 9) {
-		// Mutate codon
-		case 0:
-			codon = codon ^ byte(util.RandomNumber(0, 255))
-			strandYing = append(strandYing, codon)
-		// Omit codon
-		case 1:
-		// Add extra
-		case 3:
-			strandYing = append(strandYing, codon)
-			strandYing = append(strandYing, byte(util.RandomNumber(0, 255)))
-		// No Op
-		default:
-			strandYing = append(strandYing, codon)
+	if len(dna.StrandYing) > 0 {
+		yingRnd := int(util.RandomNumber(len(dna.StrandYang)/2, len(dna.StrandYing)*2))
+		if yingRnd < 24 {
+			yingRnd = 24
+		}
+		for i := 0; i < yingRnd; i++ {
+			ii := i % len(dna.StrandYing)
+			codon := dna.StrandYing[ii]
+			switch util.RandomNumber(0, 19) {
+			// Mutate codon
+			case 0:
+				codon = codon ^ byte(util.RandomNumber(0, 255))
+				strandYing = append(strandYing, codon)
+			// Omit codon
+			case 1:
+			// Add extra
+			case 3:
+				strandYing = append(strandYing, codon)
+				strandYing = append(strandYing, byte(util.RandomNumber(0, 255)))
+			// No Op
+			default:
+				strandYing = append(strandYing, codon)
+			}
 		}
 	}
 	dna.StrandYing = strandYing
 
 	// Yang
 	strandYang := gene.GenericGene{}
-	for i, _ := range dna.StrandYang {
-		codon := dna.StrandYang[i]
-		switch util.RandomNumber(0, 9) {
-		// Mutate codon
-		case 0:
-			codon = codon ^ byte(util.RandomNumber(0, 255))
-			strandYang = append(strandYang, codon)
-		// Omit codon
-		case 1:
-		// Add extra
-		case 2:
-			strandYang = append(strandYang, codon)
-			strandYang = append(strandYang, byte(util.RandomNumber(0, 255)))
-		// No Op
-		default:
-			strandYang = append(strandYang, codon)
+	if len(dna.StrandYang) > 0 {
+		yangRnd := int(util.RandomNumber(len(dna.StrandYang)/2, len(dna.StrandYang)*2))
+		if yangRnd < 24 {
+			yangRnd = 24
+		}
+		for i := 0; i < yangRnd; i++ {
+			ii := i % len(dna.StrandYang)
+			codon := dna.StrandYang[ii]
+			switch util.RandomNumber(0, 19) {
+			// Mutate codon
+			case 0:
+				codon = codon ^ byte(util.RandomNumber(0, 255))
+				strandYang = append(strandYang, codon)
+			// Omit codon
+			case 1:
+			// Add extra
+			case 2:
+				strandYang = append(strandYang, codon)
+				strandYang = append(strandYang, byte(util.RandomNumber(0, 255)))
+			// No Op
+			default:
+				strandYang = append(strandYang, codon)
+			}
 		}
 	}
 	dna.StrandYang = strandYang

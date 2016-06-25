@@ -81,7 +81,7 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, i
 				mathGns := gene.MathGene(gns).Heal()
 				tree, _ := mathGns.MarshalTree()
 				exp, _ := tree.MarshalExpression()
-				str := fmt.Sprintf("\rScore: %3.2f Generation: %v Expression: %v", (1.0-prgm.Score)*100.0, i, string(exp))
+				str := fmt.Sprintf("\rTotal Score: %3.2f Generation: %v Expression: %v", (1.0-prgm.Score)*100.0, i, string(exp))
 				strByts := []byte(str)
 				if len(strByts) > max {
 					max = len(strByts)
@@ -96,7 +96,16 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, i
 				fmt.Printf(str)
 			}
 			if prgm != nil && (1.0-prgm.Score) > score {
-				break
+				t := 0
+				for _, grp := range prgm.Group {
+					c := float64(grp.Wrong) / float64(grp.Count)
+					if 1.0-c > score {
+						t++
+					}
+				}
+				if t == len(prgm.Group) && t != 0 {
+					break
+				}
 			}
 		}
 		i++
@@ -194,17 +203,6 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, thre
 }
 
 func (c *Context) Fitest() *ProgramInstance {
-	//if c.VerboseMode {
-	//for i, _ := range c.Programs {
-	//gn, err := c.Programs[i].DNA.MarshalGenes()
-	//if err != nil {
-	//fmt.Println(err.Error())
-	//continue
-	//}
-	//d := gene.MathGene(gn)
-	//fmt.Println("Program", c.Programs[i].ID, c.Programs[i].Score, string(d.Heal()))
-	//}
-	//}
 	if len(c.Programs) > 0 {
 		sort.Sort(c.Programs)
 		return c.Programs[0]
