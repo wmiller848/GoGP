@@ -7,16 +7,12 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/wmiller848/GoGP/context"
 	// "github.com/urfave/cli"
 	"github.com/codegangsta/cli"
-	"github.com/wmiller848/GoGP/context"
 )
 
-func score(output int) int {
-	return 0
-}
-
-func run(pipe io.Reader, threshold, score float64, inputs, population, generations int, auto, verbose bool) error {
+func run(pipe io.Reader, threshold, score float64, inputs, population, generations int, auto, visual bool) error {
 	if inputs <= 0 {
 		return errors.New("Count mut be greater then 0")
 	}
@@ -32,27 +28,31 @@ func run(pipe io.Reader, threshold, score float64, inputs, population, generatio
 			os.Exit(0)
 		}
 	}()
-	if verbose {
-		ctx.Verbose()
-		if auto {
-			fmt.Println("Learning from population of", population, "for", inputs, "inputs")
-		} else {
-			fmt.Println("Learning from population of", population, "over", generations, "generations for", inputs, "inputs")
-		}
+	if visual {
+		go func() {
+			ctx.RunWithInlineScore(pipe, threshold, score, inputs, population, generations, auto)
+		}()
+		ctx.NewTerminal()
+		//if auto {
+		//fmt.Println("Learning from population of", population, "for", inputs, "inputs")
+		//} else {
+		//fmt.Println("Learning from population of", population, "over", generations, "generations for", inputs, "inputs")
+		//}
+	} else {
+		_, fitest := ctx.RunWithInlineScore(pipe, threshold, score, inputs, population, generations, auto)
+		prgm, _ := fitest.MarshalProgram()
+		fmt.Printf("%+v\n", string(prgm))
 	}
-	uuid, fitest := ctx.RunWithInlineScore(pipe, threshold, score, inputs, population, generations, auto)
-	prgm, _ := fitest.MarshalProgram()
-	if verbose {
-		fmt.Println("Generation ID:", uuid)
-		fmt.Println("Program ID:", fitest.ID)
-		fmt.Printf("Total Score: %3.2f\n", (1.0-fitest.Score)*100.00)
-		fmt.Println("Sub Scores:")
-		for k, grp := range fitest.Group {
-			c := float64(grp.Wrong) / float64(grp.Count)
-			fmt.Printf("%v: %3.2f (%v / %v)\n", k, (1.0-c)*100.00, grp.Count-grp.Wrong, grp.Count)
-		}
-	}
-	fmt.Printf("%+v\n", string(prgm))
+	//if visual {
+	//fmt.Println("Generation ID:", uuid)
+	//fmt.Println("Program ID:", fitest.ID)
+	//fmt.Printf("Total Score: %3.2f\n", (1.0-fitest.Score)*100.00)
+	//fmt.Println("Sub Scores:")
+	//for k, grp := range fitest.Group {
+	//c := float64(grp.Wrong) / float64(grp.Count)
+	//fmt.Printf("%v: %3.2f (%v / %v)\n", k, (1.0-c)*100.00, grp.Count-grp.Wrong, grp.Count)
+	//}
+	//}
 	return nil
 }
 

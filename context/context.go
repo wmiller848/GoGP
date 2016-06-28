@@ -2,7 +2,6 @@ package context
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"math"
 	"sort"
@@ -18,19 +17,21 @@ import (
 //type ScoreFunction func(int) int
 
 type Context struct {
-	Population  int
-	Programs    Programs
-	VerboseMode bool
+	Population int
+	Programs   Programs
+	visualMode bool
 }
 
 func New() *Context {
 	return &Context{}
 }
 
-func (c *Context) Verbose() bool {
-	c.VerboseMode = !c.VerboseMode
-	return c.VerboseMode
+func (c *Context) NewTerminal() {
+	c.visualMode = true
+	term := &Terminal{}
+	term.Start(c)
 }
+
 func (c *Context) Fitest() *ProgramInstance {
 	if len(c.Programs) > 0 {
 		sort.Sort(c.Programs)
@@ -61,7 +62,6 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, i
 	var i int = 0
 	time.Sleep(500 * time.Millisecond)
 	fountain := Multiplex(pipe)
-	max := 0
 	for {
 		if i >= generations && !auto {
 			break
@@ -82,25 +82,28 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, i
 			}
 			c.Programs = append(parents, children...)
 			prgm := c.Fitest()
-			if c.VerboseMode {
-				gns, _ := prgm.DNA.MarshalGenes()
-				mathGns := gene.MathGene(gns).Heal()
-				tree, _ := mathGns.MarshalTree()
-				exp, _ := tree.MarshalExpression()
-				str := fmt.Sprintf("\rTotal Score: %3.2f Generation: %v Expression: %v", (1.0-prgm.Score)*100.0, i, string(exp))
-				strByts := []byte(str)
-				if len(strByts) > max {
-					max = len(strByts)
-				} else {
-					pad := make([]byte, max-len(strByts))
-					for j := 0; j < len(pad); j++ {
-						pad[j] = byte(' ')
-					}
-					strByts = append(strByts, pad...)
-				}
-				str = string(strByts)
-				fmt.Printf(str)
-			}
+			//if c.VerboseMode {
+			//gns, _ := prgm.DNA.MarshalGenes()
+			//mathGns := gene.MathGene(gns).Heal()
+			//tree, _ := mathGns.MarshalTree()
+			//exp, _ := tree.MarshalExpression()
+			//str := fmt.Sprintf("\rTotal Score: %3.2f Generation: %v Expression: %v", (1.0-prgm.Score)*100.0, i, string(exp))
+			//strByts := []byte(str)
+			//if len(strByts) > max {
+			//strByts = strByts[:max]
+			//strByts[max-1] = byte('.')
+			//strByts[max-2] = byte('.')
+			//strByts[max-3] = byte('.')
+			//} else {
+			//pad := make([]byte, max-len(strByts))
+			//for j := 0; j < len(pad); j++ {
+			//pad[j] = byte(' ')
+			//}
+			//strByts = append(strByts, pad...)
+			//}
+			//str = string(strByts)
+			//fmt.Printf(str)
+			//}
 			if prgm != nil && (1.0-prgm.Score) > score {
 				t := 0
 				for _, grp := range prgm.Group {
@@ -117,9 +120,9 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, i
 		i++
 	}
 	fountain.Destroy()
-	if c.VerboseMode {
-		fmt.Printf("\n")
-	}
+	//if c.VerboseMode {
+	//fmt.Printf("\n")
+	//}
 	return uuid, c.Fitest()
 }
 
