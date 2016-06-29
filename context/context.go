@@ -2,6 +2,7 @@ package context
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"math"
 	"sort"
@@ -20,6 +21,7 @@ type Context struct {
 	Population int
 	Programs   Programs
 	visualMode bool
+	terminal   *Terminal
 }
 
 func New() *Context {
@@ -28,8 +30,8 @@ func New() *Context {
 
 func (c *Context) NewTerminal() {
 	c.visualMode = true
-	term := &Terminal{}
-	term.Start(c)
+	c.terminal = &Terminal{}
+	c.terminal.Start(c)
 }
 
 func (c *Context) Fitest() *ProgramInstance {
@@ -82,28 +84,35 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, i
 			}
 			c.Programs = append(parents, children...)
 			prgm := c.Fitest()
-			//if c.VerboseMode {
-			//gns, _ := prgm.DNA.MarshalGenes()
-			//mathGns := gene.MathGene(gns).Heal()
-			//tree, _ := mathGns.MarshalTree()
-			//exp, _ := tree.MarshalExpression()
-			//str := fmt.Sprintf("\rTotal Score: %3.2f Generation: %v Expression: %v", (1.0-prgm.Score)*100.0, i, string(exp))
-			//strByts := []byte(str)
-			//if len(strByts) > max {
-			//strByts = strByts[:max]
-			//strByts[max-1] = byte('.')
-			//strByts[max-2] = byte('.')
-			//strByts[max-3] = byte('.')
-			//} else {
-			//pad := make([]byte, max-len(strByts))
-			//for j := 0; j < len(pad); j++ {
-			//pad[j] = byte(' ')
-			//}
-			//strByts = append(strByts, pad...)
-			//}
-			//str = string(strByts)
-			//fmt.Printf(str)
-			//}
+			if c.visualMode {
+				gns, _ := prgm.DNA.MarshalGenes()
+				mathGns := gene.MathGene(gns).Heal()
+				tree, _ := mathGns.MarshalTree()
+				exp, _ := tree.MarshalExpression()
+				str := fmt.Sprintf("Total Score: %3.2f\nGeneration: %v Expression: %v\n", (1.0-prgm.Score)*100.0, i, string(exp))
+				// strByts := []byte(str)
+				// if len(strByts) > max {
+				// 	strByts = strByts[:max]
+				// 	strByts[max-1] = byte('.')
+				// 	strByts[max-2] = byte('.')
+				// 	strByts[max-3] = byte('.')
+				// } else {
+				// 	pad := make([]byte, max-len(strByts))
+				// 	for j := 0; j < len(pad); j++ {
+				// 		pad[j] = byte(' ')
+				// 	}
+				// 	strByts = append(strByts, pad...)
+				// }
+				// str = string(strByts)
+				// fmt.Printf(str)
+				//fmt.Println("Sub Scores:")
+				str += "\nSub Scores:\n"
+				for k, grp := range prgm.Group {
+					c := float64(grp.Wrong) / float64(grp.Count)
+					str += fmt.Sprintf("%v: %3.2f (%v / %v)\n", k, (1.0-c)*100.00, grp.Count-grp.Wrong, grp.Count)
+				}
+				c.terminal.window.value = []byte(str)
+			}
 			if prgm != nil && (1.0-prgm.Score) > score {
 				t := 0
 				for _, grp := range prgm.Group {

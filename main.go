@@ -33,6 +33,9 @@ func run(pipe io.Reader, threshold, score float64, inputs, population, generatio
 			ctx.RunWithInlineScore(pipe, threshold, score, inputs, population, generations, auto)
 		}()
 		ctx.NewTerminal()
+		fitest := ctx.Fitest()
+		prgm, _ := fitest.MarshalProgram()
+		fmt.Printf("%+v\n", string(prgm))
 		//if auto {
 		//fmt.Println("Learning from population of", population, "for", inputs, "inputs")
 		//} else {

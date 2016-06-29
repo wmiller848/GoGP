@@ -52,26 +52,38 @@ func (n *Node) draw() {
 			h = h - 1
 		}
 		var q, j, t int
-		for t < h {
+		for t < h+1 {
+			if q < len(n.value) {
+				if n.value[q] == '\n' {
+					j = 0
+					t++
+				} else if n.value[q] == '\r' {
+					j = 0
+				} else {
+					termbox.SetCell(x+j, y+t, rune(n.value[q]), coldef, coldef)
+					j++
+				}
+				q++
+			} else {
+				termbox.SetCell(x+j, y+t, rune(' '), coldef, coldef)
+				j++
+			}
 			if j > w {
 				j = 0
 				t++
 			}
-			if q < len(n.value) {
-				termbox.SetCell(x+j, y+t, rune(n.value[q]), coldef, coldef)
-				q++
-			}
-			j++
 		}
 	}
 }
 
-func (n *Node) splitHorizontal() {
+func (n *Node) splitHorizontal() []*Node {
 	if len(n.children) == 0 {
 	}
+	return n.children
 }
 
-func (n *Node) splitVertical() {
+func (n *Node) splitVertical() []*Node {
+	w, _ := termbox.Size()
 	if len(n.children) == 0 {
 		n.children = []*Node{
 			&Node{
@@ -83,27 +95,29 @@ func (n *Node) splitVertical() {
 					width:  n.width / 2.0,
 					height: n.height,
 				},
-				value: []byte("1"),
+				value: []byte(""),
 			},
 			&Node{
 				Position: &Position{
-					x: n.x + n.width/2.0,
+					x: n.x + (float64(w) * n.width / 2.0),
 					y: n.y,
 				},
 				Size: &Size{
 					width:  n.width / 2.0,
 					height: n.height,
 				},
-				value: []byte("2"),
+				value: []byte(""),
 			},
 		}
 	}
+	return n.children
 }
 
-func (n *Node) split() {
+func (n *Node) split() []*Node {
 	if len(n.children) == 0 {
 
 	}
+	return n.children
 }
 
 type Terminal struct {
@@ -139,8 +153,16 @@ func (t *Terminal) Start(ctx *Context) {
 		},
 		value: []byte(""),
 	}
-	t.window.splitVertical()
+	// t.window.splitVertical()
+	// t.window.value = []byte("LLama")
 	t.draw()
+	go func() {
+		for {
+			t.draw()
+			time.Sleep((1000 / 5) * time.Millisecond)
+		}
+	}()
+
 	for {
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
@@ -173,8 +195,6 @@ func (t *Terminal) Start(ctx *Context) {
 		case termbox.EventError:
 			panic(ev.Err)
 		}
-		t.draw()
-		time.Sleep((1000 / 15) * time.Millisecond)
 		//redraw_all()
 	}
 }
