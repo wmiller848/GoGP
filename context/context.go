@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/wmiller848/GoGP/data"
+	"github.com/wmiller848/GoGP/dna"
 	"github.com/wmiller848/GoGP/gene"
 	"github.com/wmiller848/GoGP/program"
 	"github.com/wmiller848/GoGP/util"
@@ -90,6 +91,24 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, i
 				tree, _ := mathGns.MarshalTree()
 				exp, _ := tree.MarshalExpression()
 				str := fmt.Sprintf("Total Score: %3.2f\nGeneration: %v Expression: %v\n", (1.0-prgm.Score)*100.0, i, string(exp))
+				str += "DNA:\n"
+				str += "Ying:\n"
+				codexGigasYing := prgm.DNA.Unwind(prgm.DNA.StrandYing)
+				for i, _ := range codexGigasYing {
+					str += fmt.Sprintf("  %v => %v\n", i, codexGigasYing[i])
+				}
+				str += "Yang:\n"
+				codexGigasYang := prgm.DNA.Unwind(prgm.DNA.StrandYang)
+				for i, _ := range codexGigasYang {
+					str += fmt.Sprintf("  %v => %v\n", i, codexGigasYang[i])
+				}
+				chanYing := prgm.DNA.Sequence(codexGigasYing)
+				chanYang := prgm.DNA.Sequence(codexGigasYang)
+				dnaSeq := prgm.DNA.SpliceSequence([2]chan *dna.Sequence{
+					chanYing,
+					chanYang,
+				})
+				str += fmt.Sprintf("Sequence => %v\n", dnaSeq)
 				// strByts := []byte(str)
 				// if len(strByts) > max {
 				// 	strByts = strByts[:max]
@@ -109,7 +128,7 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, i
 				str += "\nSub Scores:\n"
 				for k, grp := range prgm.Group {
 					c := float64(grp.Wrong) / float64(grp.Count)
-					str += fmt.Sprintf("%v: %3.2f (%v / %v)\n", k, (1.0-c)*100.00, grp.Count-grp.Wrong, grp.Count)
+					str += fmt.Sprintf("  %v: %3.2f (%v / %v)\n", k, (1.0-c)*100.00, grp.Count-grp.Wrong, grp.Count)
 				}
 				c.terminal.window.value = []byte(str)
 			}
