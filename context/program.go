@@ -7,7 +7,7 @@ type ProgramInstance struct {
 	ID         string
 	Generation int
 	Score      float64
-	Group      map[float64]*Group
+	Group      map[string]*Group
 }
 
 type Programs []*ProgramInstance

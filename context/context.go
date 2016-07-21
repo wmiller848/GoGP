@@ -1,12 +1,10 @@
 package context
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"math"
 	"sort"
-	"strconv"
 	"time"
 
 	"github.com/wmiller848/GoGP/data"
@@ -19,11 +17,10 @@ import (
 //type ScoreFunction func(int) int
 
 type Context struct {
-	Population  int
-	Programs    Programs
-	Generations int
-	visualMode  bool
-	terminal    *Terminal
+	Population int
+	Programs   Programs
+	visualMode bool
+	terminal   *Terminal
 }
 
 func New() *Context {
@@ -60,48 +57,18 @@ func (c *Context) InitPopulation(inputs, population int) {
 	}
 }
 
-func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, inputs, population, generations int, auto bool) (string, *ProgramInstance) {
+func (c *Context) RunWithInlineScore(pipe io.Reader, score float64, inputs, population, generations int, auto bool) (string, *ProgramInstance) {
 	uuid := util.RandomHex(32)
 	c.InitPopulation(inputs, population)
 	var i int = 0
 	time.Sleep(500 * time.Millisecond)
 	fountain := Multiplex(pipe)
-	tap := fountain.Multiplex().Tap()
-	var buffer []byte
-	for {
-		d, open := <-tap
-		if open == false {
-			break
-		}
-		buffer = append(buffer, d...)
-	}
-	lines := bytes.Split(buffer, []byte("\n"))
-	testData := []*data.TestData{}
-	for i, _ := range lines {
-		if len(lines[i]) > 0 {
-			nums := bytes.Split(lines[i], []byte(" "))
-			if len(nums) >= inputs {
-				dat := &data.TestData{}
-				for j, numByts := range nums {
-					num, err := strconv.ParseFloat(string(numByts), 64)
-					if err == nil {
-						if j < inputs {
-							dat.Input = append(dat.Input, num)
-						} else {
-							dat.Assert = num
-						}
-					}
-				}
-				testData = append(testData, dat)
-			}
-		}
-	}
 	for {
 		if i >= generations && !auto {
 			break
 		}
 
-		parents := c.EvalInline(testData, i, inputs, threshold, uuid)
+		parents := c.EvalInline(fountain, i, inputs, uuid)
 
 		children := []*ProgramInstance{}
 		if len(parents) > 0 && i != generations-1 {
@@ -117,30 +84,69 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, threshold, score float64, i
 			c.Programs = append(parents, children...)
 			prgm := c.Fitest()
 			if c.visualMode {
-				c.String()
+				gns, _ := prgm.DNA.MarshalGenes()
+				mathGns := gene.MathGene(gns).Heal()
+				tree, _ := mathGns.MarshalTree()
+				exp, _ := tree.MarshalExpression()
+				str := fmt.Sprintf("Total Score: %3.2f\nGeneration: %v Expression: %v\n", (1.0-prgm.Score)*100.0, i, string(exp))
+				str += "DNA:\n"
+				str += "Ying:\n"
+				codexGigasYing := prgm.DNA.Unwind(prgm.DNA.StrandYing)
+				for i, _ := range codexGigasYing {
+					str += fmt.Sprintf("  %v => %v\n", i, codexGigasYing[i])
+				}
+				str += "Yang:\n"
+				codexGigasYang := prgm.DNA.Unwind(prgm.DNA.StrandYang)
+				for i, _ := range codexGigasYang {
+					str += fmt.Sprintf("  %v => %v\n", i, codexGigasYang[i])
+				}
+				chanYing := prgm.DNA.Sequence(codexGigasYing)
+				chanYang := prgm.DNA.Sequence(codexGigasYang)
+				dnaSeq := prgm.DNA.SpliceSequence([2]chan *dna.Sequence{
+					chanYing,
+					chanYang,
+				})
+				str += fmt.Sprintf("Sequence => %v\n", dnaSeq)
+				str += "\nSub Scores:\n"
+				for k, grp := range prgm.Group {
+					c := float64(grp.Wrong) / float64(grp.Count)
+					str += fmt.Sprintf("  %v (%v): %3.2f (%v / %v)\n", k, data.NumberFromString(k), (1.0-c)*100.00, grp.Count-grp.Wrong, grp.Count)
+				}
+				c.terminal.window.value = []byte(str)
 			}
 			if prgm != nil && (1.0-prgm.Score) > score {
 				t := 0
 				for _, grp := range prgm.Group {
 					c := float64(grp.Wrong) / float64(grp.Count)
-					if 1.0-c > score {
+					if 1.0-c >= score {
 						t++
 					}
 				}
 				if t == len(prgm.Group) && t != 0 {
+					// c.EvalInline(fountain, i, inputs, uuid, true)
 					break
 				}
 			}
 		}
 		i++
-		c.Generations++
 	}
 	fountain.Destroy()
 	return uuid, c.Fitest()
 }
 
-func (c *Context) EvalInline(testData []*data.TestData, generation, inputs int, threshold float64, uuid string) Programs {
+func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid string) Programs {
 	validPrograms := 0
+	tap := fountain.Multiplex().Tap()
+	var buffer []byte
+	for {
+		d, open := <-tap
+		if open == false {
+			break
+		}
+		buffer = append(buffer, d...)
+	}
+	testData, threshold, assertMap := data.New(buffer, inputs)
+
 	for i, _ := range c.Programs {
 		prgm := c.Programs[i]
 		gns, _ := prgm.DNA.MarshalGenes()
@@ -149,20 +155,22 @@ func (c *Context) EvalInline(testData []*data.TestData, generation, inputs int, 
 		if tree == nil {
 			continue
 		}
-		wrong := make(map[float64]*Group)
+		wrong := make(map[string]*Group)
 		for _, dat := range testData {
-			if wrong[dat.Assert] == nil {
-				wrong[dat.Assert] = &Group{
+			if wrong[dat.AssertStr] == nil {
+				wrong[dat.AssertStr] = &Group{
 					Count: 0,
 					Wrong: 0,
 				}
 			}
 			out := tree.Eval(dat.Input...)
 			diff := math.Abs(out - dat.Assert)
-			//fmt.Println(prgm.ID, inputFloats, out, assertFloat, diff)
-			wrong[dat.Assert].Count++
+			wrong[dat.AssertStr].Count++
+			// if log {
+			// 	fmt.Println(dat.AssertStr, dat.Assert, out)
+			// }
 			if diff >= threshold || math.IsNaN(out) {
-				wrong[dat.Assert].Wrong++
+				wrong[dat.AssertStr].Wrong++
 			}
 		}
 		total := 0.0
@@ -173,6 +181,10 @@ func (c *Context) EvalInline(testData []*data.TestData, generation, inputs int, 
 		total /= float64(len(wrong))
 		prgm.Score = total
 		prgm.Group = wrong
+		prgm.AssertMap = assertMap
+		// if log {
+		// 	return c.Programs
+		// }
 		validPrograms++
 	}
 
@@ -200,40 +212,6 @@ func (c *Context) InlineData() []*data.TestData {
 	return []*data.TestData{}
 }
 
-func (c *Context) ScoreProgram() {
-
-}
-
-func (c *Context) String() {
-	prgm := c.Fitest()
-	gns, _ := prgm.DNA.MarshalGenes()
-	mathGns := gene.MathGene(gns).Heal()
-	tree, _ := mathGns.MarshalTree()
-	exp, _ := tree.MarshalExpression()
-	str := fmt.Sprintf("Total Score: %3.2f\nGeneration: %v Expression: %v\n", (1.0-prgm.Score)*100.0, c.Generations, string(exp))
-	str += "DNA:\n"
-	str += "Ying:\n"
-	codexGigasYing := prgm.DNA.Unwind(prgm.DNA.StrandYing)
-	for i, _ := range codexGigasYing {
-		str += fmt.Sprintf("  %v => %v\n", i, codexGigasYing[i])
-	}
-	str += "Yang:\n"
-	codexGigasYang := prgm.DNA.Unwind(prgm.DNA.StrandYang)
-	for i, _ := range codexGigasYang {
-		str += fmt.Sprintf("  %v => %v\n", i, codexGigasYang[i])
-	}
-	chanYing := prgm.DNA.Sequence(codexGigasYing)
-	chanYang := prgm.DNA.Sequence(codexGigasYang)
-	dnaSeq := prgm.DNA.SpliceSequence([2]chan *dna.Sequence{
-		chanYing,
-		chanYang,
-	})
-	str += fmt.Sprintf("Sequence => %v\n", dnaSeq)
-	str += "\nSub Scores:\n"
-	for k, grp := range prgm.Group {
-		c := float64(grp.Wrong) / float64(grp.Count)
-		str += fmt.Sprintf("  %v: %3.2f (%v / %v)\n", k, (1.0-c)*100.00, grp.Count-grp.Wrong, grp.Count)
-	}
-	c.terminal.window.value = []byte(str)
-
-}
+// func (c *Context) ScoreProgram() {
+//
+// }

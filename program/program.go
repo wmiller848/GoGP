@@ -2,6 +2,7 @@ package program
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 
 type Program struct {
 	InputCount int
+	AssertMap  map[string]float64
 	Block      dna.Block
 	DNA        *dna.DNA
 	Template   string
@@ -62,6 +64,14 @@ func (p *Program) MarshalProgram() ([]byte, error) {
 	//=====
 	helix, _ := p.DNA.MarshalHelix()
 	pgm = strings.Replace(pgm, "{{dna}}", string(helix), 1)
+	//=====
+	// AssertMap
+	//=====
+	assertMap := ""
+	for k, v := range p.AssertMap {
+		assertMap += fmt.Sprintf("  '%v': %v\n", k, v)
+	}
+	pgm = strings.Replace(pgm, "{{assertMap}}", assertMap, 1)
 	// =====
 	// Variabls
 	// =====

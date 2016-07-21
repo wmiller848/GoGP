@@ -12,7 +12,7 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func run(pipe io.Reader, threshold, score float64, inputs, population, generations int, auto, visual bool) error {
+func run(pipe io.Reader, score float64, inputs, population, generations int, auto, visual bool) error {
 	if inputs <= 0 {
 		return errors.New("Count mut be greater then 0")
 	}
@@ -30,32 +30,17 @@ func run(pipe io.Reader, threshold, score float64, inputs, population, generatio
 	}()
 	if visual {
 		go func() {
-			ctx.RunWithInlineScore(pipe, threshold, score, inputs, population, generations, auto)
+			ctx.RunWithInlineScore(pipe, score, inputs, population, generations, auto)
 		}()
 		ctx.NewTerminal()
 		fitest := ctx.Fitest()
 		prgm, _ := fitest.MarshalProgram()
 		fmt.Printf("%+v\n", string(prgm))
-		//if auto {
-		//fmt.Println("Learning from population of", population, "for", inputs, "inputs")
-		//} else {
-		//fmt.Println("Learning from population of", population, "over", generations, "generations for", inputs, "inputs")
-		//}
 	} else {
-		_, fitest := ctx.RunWithInlineScore(pipe, threshold, score, inputs, population, generations, auto)
+		_, fitest := ctx.RunWithInlineScore(pipe, score, inputs, population, generations, auto)
 		prgm, _ := fitest.MarshalProgram()
 		fmt.Printf("%+v\n", string(prgm))
 	}
-	//if visual {
-	//fmt.Println("Generation ID:", uuid)
-	//fmt.Println("Program ID:", fitest.ID)
-	//fmt.Printf("Total Score: %3.2f\n", (1.0-fitest.Score)*100.00)
-	//fmt.Println("Sub Scores:")
-	//for k, grp := range fitest.Group {
-	//c := float64(grp.Wrong) / float64(grp.Count)
-	//fmt.Printf("%v: %3.2f (%v / %v)\n", k, (1.0-c)*100.00, grp.Count-grp.Wrong, grp.Count)
-	//}
-	//}
 	return nil
 }
 
@@ -73,12 +58,6 @@ func main() {
 					Usage:  "Number of input fields to learn",
 					EnvVar: "GOGP_COUNT",
 					Value:  0,
-				},
-				cli.Float64Flag{
-					Name:   "threshold, t",
-					Usage:  "Float value for how close the output needs to be to the training data",
-					EnvVar: "GOGP_THRESHOLD",
-					Value:  500.0,
 				},
 				cli.Float64Flag{
 					Name:   "score, s",
@@ -132,7 +111,7 @@ func main() {
 				} else {
 					fmt.Println("Too many arguments, provide path to one file.")
 				}
-				run(pipe, c.Float64("threshold"), c.Float64("score"), c.Int("count"), c.Int("population"), c.Int("generations"), !c.Bool("auto"), c.Bool("verbose"))
+				run(pipe, c.Float64("score"), c.Int("count"), c.Int("population"), c.Int("generations"), !c.Bool("auto"), c.Bool("verbose"))
 			},
 		},
 	}

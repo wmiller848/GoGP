@@ -22,7 +22,7 @@ type SequenceNode struct {
 }
 
 func (s *SequenceNode) String() string {
-	str := fmt.Sprintf("%+v ", *s.Sequence)
+	str := fmt.Sprintf("%+v ", s.Sequence.Codex)
 	if s.Child != nil {
 		str += s.Child.String()
 	}

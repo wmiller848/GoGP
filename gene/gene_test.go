@@ -2,10 +2,30 @@ package gene
 
 import "testing"
 
+func AssertGene(g Gene) {}
+
 func AssertInt(t *testing.T, a, b int) bool {
 	if a != b {
 		t.Error("Expected", b)
 		t.Error("Got:", a)
+		return false
+	}
+	return true
+}
+
+func AssertFloat(t *testing.T, a, b float64) bool {
+	if a != b {
+		t.Error("Expected", b)
+		t.Error("Got:", a)
+		return false
+	}
+	return true
+}
+
+func AssertStr(t *testing.T, a, b string) bool {
+	if a != b {
+		t.Error("Expected: " + b)
+		t.Error("Got: " + a)
 		return false
 	}
 	return true

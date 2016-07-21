@@ -17,6 +17,22 @@ process.on('exit', ->
   #console.log('Dead...')
 )
 
+assertMap =
+{{assertMap}}
+##
+##
+match = (output) ->
+  diff = Number.MAX_VALUE
+  ok = ""
+  ov = 0
+  for k, v of assertMap
+    d = Math.abs(v - output)
+    if d < diff
+      diff = d
+      ok = k
+      ov = v
+  # "#{ok} (#{ov}) from #{output}"
+  "#{ok}"
 ##
 ##
 run = ->
@@ -24,7 +40,8 @@ run = ->
   output = {{output}}
   if isNaN(output)
     output = ''
-  process.stdout.write(new Buffer.from(output.toString() + '\n'))
+  ot = match(output)
+  process.stdout.write(new Buffer.from(ot.toString() + '\n'))
 
 if pargs.length == 0
   process.stdin.setEncoding('utf8')
@@ -33,16 +50,12 @@ if pargs.length == 0
     if chunks
       chunks = chunks.toString().trim().split('\n')
       for chunk in chunks
-        args = []
-        data = new Buffer.from(chunk.split(' '))
-        args.push(data...)
+        args = chunk.split(',')
         run()
   )
   process.stdin.on('end', ->
     #process.stdout.write(new Buffer.from('\r\n'))
   )
 else
-  args = []
-  data = new Buffer.from(pargs.join(' ').trim().split(' '))
-  args.push(data...)
+  args = pargs.join(' ').trim().split(' ')
   run()

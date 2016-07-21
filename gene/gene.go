@@ -35,7 +35,18 @@ var blockVars []byte = []byte{
 	'g', 'h', 'i', 'j', 'k', 'l',
 	'm', 'n', 'o', 'p', 'q', 'r',
 	's', 't', 'u', 'v', 'w', 'x',
-	'y', 'z',
+	'y', 'z', '_',
+}
+
+func IsVariable(v string) bool {
+	for i, _ := range blockVars {
+		for t, _ := range v {
+			if blockVars[i] == v[t] {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func Variable(j int) string {
