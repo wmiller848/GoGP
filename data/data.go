@@ -2,6 +2,7 @@ package data
 
 import (
 	"bytes"
+	"fmt"
 	"math"
 	"strconv"
 )
@@ -12,14 +13,17 @@ type TestData struct {
 	AssertStr string
 }
 
-func New(buffer []byte, inputs int) ([]*TestData, float64, map[string]float64) {
+type DataMap map[string]float64
+
+func New(buffer []byte, inputs int) ([]*TestData, float64, DataMap, DataMap) {
 	////////////////////////
 	// TODO :: Fix this shit
 	////////////////////////
 	lines := bytes.Split(buffer, []byte("\n"))
 	////////////////////////
 	testData := []*TestData{}
-	asserts := make(map[string]float64)
+	inputMap := make(DataMap)
+	assertMap := make(DataMap)
 	for i, _ := range lines {
 		if len(lines[i]) > 0 {
 			vals := bytes.Split(lines[i], []byte(","))
@@ -32,23 +36,16 @@ func New(buffer []byte, inputs int) ([]*TestData, float64, map[string]float64) {
 							data.Input = append(data.Input, num)
 						} else {
 							data.Assert = num
-							data.AssertStr = string(val)
-							asserts[data.AssertStr] = data.Assert
 						}
 					} else {
-						if string(val) == "true" {
-							num = 1
-						} else if string(val) == "false" {
-							num = -1
-						} else {
-							num = NumberFromString(string(val))
-						}
+						num = NumberFromString(string(val), j)
 						if j < inputs {
 							data.Input = append(data.Input, num)
+							inputMap[string(val)] = num
 						} else {
 							data.Assert = num
 							data.AssertStr = string(val)
-							asserts[data.AssertStr] = data.Assert
+							assertMap[data.AssertStr] = data.Assert
 						}
 					}
 				}
@@ -57,8 +54,8 @@ func New(buffer []byte, inputs int) ([]*TestData, float64, map[string]float64) {
 		}
 	}
 	threshold := math.MaxFloat64
-	for i, iv := range asserts {
-		for j, jv := range asserts {
+	for i, iv := range assertMap {
+		for j, jv := range assertMap {
 			if i != j {
 				diff := math.Abs(iv - jv)
 				if diff < threshold {
@@ -67,15 +64,20 @@ func New(buffer []byte, inputs int) ([]*TestData, float64, map[string]float64) {
 			}
 		}
 	}
-	return testData, threshold / 2.0, memo
+	return testData, threshold / 2.0, inputMap, assertMap
 }
 
 var base = 8.0
-var memo = make(map[string]float64)
+var memo = make(map[int]DataMap)
 
-func NumberFromString(str string) float64 {
-	if memo[str] == 0 {
-		memo[str] = float64(len(memo)+1) * base
+func NumberFromString(str string, j int) float64 {
+
+	if memo[j] == nil {
+		memo[j] = make(DataMap)
 	}
-	return memo[str]
+	if memo[j][str] == 0 {
+		memo[j][str] = float64(len(memo[j])+1) * base
+		fmt.Println(memo[j])
+	}
+	return memo[j][str]
 }

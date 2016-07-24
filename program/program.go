@@ -6,13 +6,15 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/wmiller848/GoGP/data"
 	"github.com/wmiller848/GoGP/dna"
 	"github.com/wmiller848/GoGP/gene"
 )
 
 type Program struct {
 	InputCount int
-	AssertMap  map[string]float64
+	AssertMap  data.DataMap
+	InputMap   data.DataMap
 	Block      dna.Block
 	DNA        *dna.DNA
 	Template   string
@@ -64,6 +66,18 @@ func (p *Program) MarshalProgram() ([]byte, error) {
 	//=====
 	helix, _ := p.DNA.MarshalHelix()
 	pgm = strings.Replace(pgm, "{{dna}}", string(helix), 1)
+	//=====
+	// InputMap
+	//=====
+	inputMap := ""
+	for k, v := range p.InputMap {
+		inputMap += fmt.Sprintf("  '%v': %v\n", k, v)
+	}
+	if inputMap != "" {
+		pgm = strings.Replace(pgm, "{{inputMap}}", inputMap, 1)
+	} else {
+		pgm = strings.Replace(pgm, "{{inputMap}}", "  'noInputStrings': NULL\n", 1)
+	}
 	//=====
 	// AssertMap
 	//=====

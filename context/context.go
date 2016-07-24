@@ -110,7 +110,7 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, score float64, inputs, popu
 				str += "\nSub Scores:\n"
 				for k, grp := range prgm.Group {
 					c := float64(grp.Wrong) / float64(grp.Count)
-					str += fmt.Sprintf("  %v (%v): %3.2f (%v / %v)\n", k, data.NumberFromString(k), (1.0-c)*100.00, grp.Count-grp.Wrong, grp.Count)
+					str += fmt.Sprintf("  %v (%v): %3.2f (%v / %v)\n", k, data.NumberFromString(k, inputs-1), (1.0-c)*100.00, grp.Count-grp.Wrong, grp.Count)
 				}
 				c.terminal.window.value = []byte(str)
 			}
@@ -145,7 +145,7 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 		}
 		buffer = append(buffer, d...)
 	}
-	testData, threshold, assertMap := data.New(buffer, inputs)
+	testData, threshold, inputMap, assertMap := data.New(buffer, inputs)
 
 	for i, _ := range c.Programs {
 		prgm := c.Programs[i]
@@ -181,6 +181,7 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 		total /= float64(len(wrong))
 		prgm.Score = total
 		prgm.Group = wrong
+		prgm.InputMap = inputMap
 		prgm.AssertMap = assertMap
 		// if log {
 		// 	return c.Programs

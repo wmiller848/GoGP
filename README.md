@@ -28,29 +28,27 @@ to an assigned threshold of accuracy.
       Default: true
       Required: false
 
-`-t`  Threshold: Float value for how close output must be to training data.
-      Default: 500.0
-      Required: false
-
 `-s`  Score: Float value for desired percentage score of program. 0.10 = 10%
       Default: 0.90
       Required: false
 
 This will output the contents of a [CoffeScript](https://github.com/jashkenas/coffeescript) program that evolved to match the input and desired output.
 
-The contents of `some.dat` looks like this:
+The contents of `some.csv` looks like this:
 
 ```
-1.0 3.1 5.2 1.0 1000
-3.1 5.2 1.8 2.3 2000
+1.0,3.1,5.2,1.0,Iris-setosa
+3.1,5.2,1.8,2.3,Iris-virginica
 ```
 
 The last column in each row is the desired output, meaning
-GoGP will evolve a program that given the input `1.0 3.1 5.2 1.0`
-will output a value as close as possible to `1000`.
+GoGP will evolve a program that given the input `1.0,3.1,5.2,1.0`
+will output `Iris-setosa`.
 
-Invoking the program is easy `coffee MyProgram.coffee < some.dat`, you
-could then pipe that output into your tooling.
+Example: `GoGP learn -c 4 -s 0.90 < some.csv > MyProgram.coffee`
+
+Invoking the program is easy `coffee MyProgram.coffee < some.csv`,
+you could then pipe that output into your tooling.
 
 ## About ##
 

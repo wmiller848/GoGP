@@ -17,6 +17,8 @@ process.on('exit', ->
   #console.log('Dead...')
 )
 
+inputMap =
+{{inputMap}}
 assertMap =
 {{assertMap}}
 ##
