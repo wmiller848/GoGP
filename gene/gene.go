@@ -89,5 +89,9 @@ func VariableTemplate(count int) string {
 	for i := 0; i < count; i++ {
 		tmpl += Variable(i) + " = Number(args[" + strconv.Itoa(i) + "]);"
 	}
+	tmpl += "\n  "
+	for i := 0; i < count; i++ {
+		tmpl += Variable(i) + " = inputMap[args[" + strconv.Itoa(i) + "]] if isNaN(" + Variable(i) + ");"
+	}
 	return tmpl
 }

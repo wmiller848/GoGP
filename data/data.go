@@ -2,7 +2,6 @@ package data
 
 import (
 	"bytes"
-	"fmt"
 	"math"
 	"strconv"
 )
@@ -77,7 +76,6 @@ func NumberFromString(str string, j int) float64 {
 	}
 	if memo[j][str] == 0 {
 		memo[j][str] = float64(len(memo[j])+1) * base
-		fmt.Println(memo[j])
 	}
 	return memo[j][str]
 }

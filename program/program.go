@@ -76,7 +76,7 @@ func (p *Program) MarshalProgram() ([]byte, error) {
 	if inputMap != "" {
 		pgm = strings.Replace(pgm, "{{inputMap}}", inputMap, 1)
 	} else {
-		pgm = strings.Replace(pgm, "{{inputMap}}", "  'noInputStrings': NULL\n", 1)
+		pgm = strings.Replace(pgm, "{{inputMap}}", "  'noInputStrings': null\n", 1)
 	}
 	//=====
 	// AssertMap

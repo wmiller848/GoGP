@@ -110,7 +110,7 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, score float64, inputs, popu
 				str += "\nSub Scores:\n"
 				for k, grp := range prgm.Group {
 					c := float64(grp.Wrong) / float64(grp.Count)
-					str += fmt.Sprintf("  %v (%v): %3.2f (%v / %v)\n", k, data.NumberFromString(k, inputs-1), (1.0-c)*100.00, grp.Count-grp.Wrong, grp.Count)
+					str += fmt.Sprintf("  %v (%v): %3.2f (%v / %v)\n", k, data.NumberFromString(k, inputs), (1.0-c)*100.00, grp.Count-grp.Wrong, grp.Count)
 				}
 				c.terminal.window.value = []byte(str)
 			}
