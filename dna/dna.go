@@ -1,51 +1,52 @@
 package dna
 
 import (
+	"math"
+
 	"github.com/wmiller848/GoGP/gene"
 	"github.com/wmiller848/GoGP/util"
-	"math"
 )
 
 type DNA struct {
-	StrandYing gene.GenericGene
+	StrandYin  gene.GenericGene
 	StrandYang gene.GenericGene
 	Block      Block
 }
 
 func (d *DNA) Mutate() *DNA {
 	dna := &DNA{
-		StrandYing: d.StrandYing,
+		StrandYin:  d.StrandYin,
 		StrandYang: d.StrandYang,
 		Block:      d.Block,
 	}
-	// Ying
-	strandYing := gene.GenericGene{}
-	if len(dna.StrandYing) > 0 {
-		yingRnd := int(util.RandomNumber(len(dna.StrandYang)/2, len(dna.StrandYing)*2))
+	// Yin
+	strandYin := gene.GenericGene{}
+	if len(dna.StrandYin) > 0 {
+		yingRnd := int(util.RandomNumber(len(dna.StrandYang)/2, len(dna.StrandYin)*2))
 		if yingRnd < 24 {
 			yingRnd = 24
 		}
 		for i := 0; i < yingRnd; i++ {
-			ii := i % len(dna.StrandYing)
-			codon := dna.StrandYing[ii]
+			ii := i % len(dna.StrandYin)
+			codon := dna.StrandYin[ii]
 			switch util.RandomNumber(0, 19) {
 			// Mutate codon
 			case 0:
 				codon = codon ^ byte(util.RandomNumber(0, 255))
-				strandYing = append(strandYing, codon)
+				strandYin = append(strandYin, codon)
 			// Omit codon
 			case 1:
 			// Add extra
 			case 3:
-				strandYing = append(strandYing, codon)
-				strandYing = append(strandYing, byte(util.RandomNumber(0, 255)))
+				strandYin = append(strandYin, codon)
+				strandYin = append(strandYin, byte(util.RandomNumber(0, 255)))
 			// No Op
 			default:
-				strandYing = append(strandYing, codon)
+				strandYin = append(strandYin, codon)
 			}
 		}
 	}
-	dna.StrandYing = strandYing
+	dna.StrandYin = strandYin
 
 	// Yang
 	strandYang := gene.GenericGene{}
@@ -148,7 +149,7 @@ func (d *DNA) Sequence(codexGigas CodexGigas) chan *Sequence {
 }
 
 func (d *DNA) SpliceSequence(chanSeqs [2]chan *Sequence) *SequenceNode {
-	var headYing *SequenceNode
+	var headYin *SequenceNode
 	var headYang *SequenceNode
 	for j, chanSeq := range chanSeqs {
 		var head0 *SequenceNode
@@ -189,32 +190,32 @@ func (d *DNA) SpliceSequence(chanSeqs [2]chan *Sequence) *SequenceNode {
 		}
 
 		if j == 0 {
-			headYing = head
+			headYin = head
 		} else {
 			headYang = head
 		}
 	}
 
 	var dnaSeq *SequenceNode
-	if headYing != nil && headYang != nil {
-		dnaSeqYing := headYing.Clone()
+	if headYin != nil && headYang != nil {
+		dnaSeqYin := headYin.Clone()
 		dnaSeqYang := headYang.Clone()
 		var i int = -1
 		for {
-			if i < dnaSeqYing.Index && dnaSeqYing.Index < dnaSeqYang.Index {
+			if i < dnaSeqYin.Index && dnaSeqYin.Index < dnaSeqYang.Index {
 				if i == -1 {
 					i = 0
 				}
 				if dnaSeq == nil {
-					dnaSeq = dnaSeqYing.Clone()
+					dnaSeq = dnaSeqYin.Clone()
 					dnaSeq.Child = nil
-					i += dnaSeqYing.Elements
+					i += dnaSeqYin.Elements
 				} else {
-					clone := dnaSeqYing.Clone()
+					clone := dnaSeqYin.Clone()
 					dnaSeq = dnaSeq.Merge(clone.Sequence)
 					i += clone.Elements
 				}
-			} else if i < dnaSeqYang.Index && dnaSeqYang.Index < dnaSeqYing.Index {
+			} else if i < dnaSeqYang.Index && dnaSeqYang.Index < dnaSeqYin.Index {
 				if i == -1 {
 					i = 0
 				}
@@ -228,13 +229,13 @@ func (d *DNA) SpliceSequence(chanSeqs [2]chan *Sequence) *SequenceNode {
 					i += clone.Elements
 				}
 			}
-			if dnaSeqYing.Child == nil && dnaSeqYang.Child == nil {
+			if dnaSeqYin.Child == nil && dnaSeqYang.Child == nil {
 				break
 			}
-			if dnaSeqYing.Child != nil {
-				dnaSeqYing = dnaSeqYing.Child
+			if dnaSeqYin.Child != nil {
+				dnaSeqYin = dnaSeqYin.Child
 			} else {
-				dnaSeqYing.Index = math.MaxInt64
+				dnaSeqYin.Index = math.MaxInt64
 			}
 			if dnaSeqYang.Child != nil {
 				dnaSeqYang = dnaSeqYang.Child
@@ -242,26 +243,26 @@ func (d *DNA) SpliceSequence(chanSeqs [2]chan *Sequence) *SequenceNode {
 				dnaSeqYang.Index = math.MaxInt64
 			}
 		}
-	} else if headYing != nil {
-		dnaSeqYing := headYing.Clone()
+	} else if headYin != nil {
+		dnaSeqYin := headYin.Clone()
 		i := 0
 		for {
-			if i < dnaSeqYing.Index {
+			if i < dnaSeqYin.Index {
 				if dnaSeq == nil {
-					dnaSeq = dnaSeqYing.Clone()
+					dnaSeq = dnaSeqYin.Clone()
 					dnaSeq.Child = nil
 					i += dnaSeq.Index + dnaSeq.Elements
 				} else {
-					clone := dnaSeqYing.Clone()
+					clone := dnaSeqYin.Clone()
 					dnaSeq = dnaSeq.Merge(clone.Sequence)
 					i += clone.Index + clone.Elements
 				}
-				if dnaSeqYing.Child != nil {
-					dnaSeqYing = dnaSeqYing.Child
+				if dnaSeqYin.Child != nil {
+					dnaSeqYin = dnaSeqYin.Child
 				}
 			} else {
-				if dnaSeqYing.Child != nil {
-					dnaSeqYing = dnaSeqYing.Child
+				if dnaSeqYin.Child != nil {
+					dnaSeqYin = dnaSeqYin.Child
 				} else {
 					break
 				}
@@ -297,12 +298,12 @@ func (d *DNA) SpliceSequence(chanSeqs [2]chan *Sequence) *SequenceNode {
 }
 
 func (d *DNA) MarshalGenes() ([]byte, error) {
-	codexGigasYing := d.Unwind(d.StrandYing)
+	codexGigasYin := d.Unwind(d.StrandYin)
 	codexGigasYang := d.Unwind(d.StrandYang)
-	chanYing := d.Sequence(codexGigasYing)
+	chanYin := d.Sequence(codexGigasYin)
 	chanYang := d.Sequence(codexGigasYang)
 	dnaSeq := d.SpliceSequence([2]chan *Sequence{
-		chanYing,
+		chanYin,
 		chanYang,
 	})
 
@@ -314,5 +315,5 @@ func (d *DNA) MarshalGenes() ([]byte, error) {
 }
 
 func (d *DNA) MarshalHelix() ([]byte, error) {
-	return []byte(util.Hex(d.StrandYing) + "|" + util.Hex(d.StrandYang)), nil
+	return []byte(util.Hex(d.StrandYin) + "|" + util.Hex(d.StrandYang)), nil
 }

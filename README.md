@@ -41,6 +41,8 @@ The contents of `some.csv` looks like this:
 3.1,5.2,1.8,2.3,Iris-virginica
 ```
 
+![House Votes](examples/datasets/plants-output.png)
+
 The last column in each row is the desired output, meaning
 GoGP will evolve a program that given the input `1.0,3.1,5.2,1.0`
 will output `Iris-setosa`.
@@ -75,7 +77,7 @@ The first step is to sequence the `DNA`, like real `DNA`, our
 digital `DNA` contains four bases with a block size of three, additonaly
 each `DNA` strand can be read in three frames. Giving us 4^3=64
 possible encodings to work with. Each program contains two sequences
-of `DNA`, a `ying` and `yang` strand. Like real `DNA` each strand
+of `DNA`, a `ying` and `yang` strand. Each `DNA` strand
 is sequenced togeather and produces a single reading of the genes encoded.
 The process looks at each of the three readings in each strand, and
 produces the gene sequence in order of index of each gene.

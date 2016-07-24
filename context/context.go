@@ -90,20 +90,20 @@ func (c *Context) RunWithInlineScore(pipe io.Reader, score float64, inputs, popu
 				exp, _ := tree.MarshalExpression()
 				str := fmt.Sprintf("Total Score: %3.2f\nGeneration: %v Expression: %v\n", (1.0-prgm.Score)*100.0, i, string(exp))
 				str += "DNA:\n"
-				str += "Ying:\n"
-				codexGigasYing := prgm.DNA.Unwind(prgm.DNA.StrandYing)
-				for i, _ := range codexGigasYing {
-					str += fmt.Sprintf("  %v => %v\n", i, codexGigasYing[i])
+				str += "Yin:\n"
+				codexGigasYin := prgm.DNA.Unwind(prgm.DNA.StrandYin)
+				for i, _ := range codexGigasYin {
+					str += fmt.Sprintf("  %v => %v\n", i, codexGigasYin[i])
 				}
 				str += "Yang:\n"
 				codexGigasYang := prgm.DNA.Unwind(prgm.DNA.StrandYang)
 				for i, _ := range codexGigasYang {
 					str += fmt.Sprintf("  %v => %v\n", i, codexGigasYang[i])
 				}
-				chanYing := prgm.DNA.Sequence(codexGigasYing)
+				chanYin := prgm.DNA.Sequence(codexGigasYin)
 				chanYang := prgm.DNA.Sequence(codexGigasYang)
 				dnaSeq := prgm.DNA.SpliceSequence([2]chan *dna.Sequence{
-					chanYing,
+					chanYin,
 					chanYang,
 				})
 				str += fmt.Sprintf("Sequence => %v\n", dnaSeq)

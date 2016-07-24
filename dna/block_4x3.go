@@ -67,15 +67,15 @@ func (b *Block4x3) Encoding() map[Base]map[Base]map[Base]Codon {
 
 func (b *Block4x3) Random() *DNA {
 	dna := &DNA{
-		StrandYing: gene.GenericGene{},
+		StrandYin:  gene.GenericGene{},
 		StrandYang: gene.GenericGene{},
 		Block:      b,
 	}
 
-	seedYing := int(util.RandomNumber(SeedBase, SeedMax))
-	for i := 0; i < seedYing; i++ {
+	seedYin := int(util.RandomNumber(SeedBase, SeedMax))
+	for i := 0; i < seedYin; i++ {
 		pick := byte(util.RandomNumber(0, 255))
-		dna.StrandYing = append(dna.StrandYing, pick)
+		dna.StrandYin = append(dna.StrandYin, pick)
 	}
 	seedYang := int(util.RandomNumber(SeedBase, SeedMax))
 	for i := 0; i < seedYang; i++ {
