@@ -13,8 +13,7 @@ to an assigned threshold of accuracy.
 
 `GoGP learn -c 4 -p 20 -g 10 < some.dat > MyProgram.coffee`
 
-`-c`  Count: The number of columns in the input data
-      that should be learned.
+`-c`  Count: The number of columns in the input data that should be learned.
       Required: true
 
 `-p`  Population: The running population to keep around.
@@ -22,6 +21,7 @@ to an assigned threshold of accuracy.
       Required: false
 
 `-g`  Generations: The number of generations to iterate.
+      Default: ∞
       Required: false
 
 `-a`  Auto: Run until a score of 90% or better is found.
@@ -32,27 +32,26 @@ to an assigned threshold of accuracy.
       Default: 0.90
       Required: false
 
-This will output the contents of a [CoffeScript](https://github.com/jashkenas/coffeescript) program that evolved to match the input and desired output.
+This will output the contents of a [CoffeScript](https://github.com/jashkenas/coffeescript) program that evolved to match the input to our desired output.
 
-The contents of `some.csv` looks like this:
+The contents of `some.csv` could look like this:
 
 ```
 1.0,3.1,5.2,1.0,Iris-setosa
 3.1,5.2,1.8,2.3,Iris-virginica
 ```
-## Invocation ##
 
-Included in `examples/datasets` are several datasets to attempt tp learn.
+Included in `examples/datasets` are several datasets to test learning.
 
 Running the plant example can be done like:
 
 `GoGP learn -c 4 -s 0.90 -v < examples/datasets/plants.csv > output.coffee`
 
-For examle a run scoring 90% or above in all categories:
+For examle a run that scored 90% or above in all categories:
 
 ![House Votes](examples/datasets/plants-output.png)
 
-
+## Invocation ##
 
 The last column in each row is the desired output, meaning
 GoGP will evolve a program that given the input `1.0,3.1,5.2,1.0`
