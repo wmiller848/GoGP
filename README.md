@@ -40,8 +40,19 @@ The contents of `some.csv` looks like this:
 1.0,3.1,5.2,1.0,Iris-setosa
 3.1,5.2,1.8,2.3,Iris-virginica
 ```
+## Invocation ##
+
+Included in `examples/datasets` are several datasets to attempt tp learn.
+
+Running the plant example can be done like:
+
+`GoGP learn -c 4 -s 0.90 -v < examples/datasets/plants.csv > output.coffee`
+
+For examle a run scoring 90% or above in all categories:
 
 ![House Votes](examples/datasets/plants-output.png)
+
+
 
 The last column in each row is the desired output, meaning
 GoGP will evolve a program that given the input `1.0,3.1,5.2,1.0`
