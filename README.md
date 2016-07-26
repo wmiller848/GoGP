@@ -14,22 +14,31 @@ to an assigned threshold of accuracy.
 `GoGP learn -c 4 -p 20 -g 10 < some.dat > MyProgram.coffee`
 
 `-c`  Count: The number of columns in the input data that should be learned.
+
       Required: true
 
 `-p`  Population: The running population to keep around.
+
       Default: 20
+
       Required: false
 
 `-g`  Generations: The number of generations to iterate.
+
       Default: ∞
+
       Required: false
 
 `-a`  Auto: Run until a score of 90% or better is found.
+
       Default: true
+
       Required: false
 
 `-s`  Score: Float value for desired percentage score of program. 0.10 = 10%
+
       Default: 0.90
+
       Required: false
 
 This will output the contents of a [CoffeScript](https://github.com/jashkenas/coffeescript) program that evolved to match the input to our desired output.
