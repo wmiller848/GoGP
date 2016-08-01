@@ -153,6 +153,7 @@ func (g MathGene) MarshalTree() (*GeneNode, error) {
 	var current *GeneNode = nil
 	var numberNode *GeneNode = nil
 	var variableNode *GeneNode = nil
+	var lastOp string
 	for _, chrom := range g {
 		switch chrom {
 		case byte('$'), byte('a'), byte('b'), byte('c'), byte('d'), byte('e'), byte('f'), byte('g'), byte('h'), byte('i'), byte('j'), byte('k'), byte('l'), byte('m'), byte('n'), byte('o'), byte('p'), byte('q'), byte('r'), byte('s'), byte('t'), byte('u'), byte('v'), byte('w'), byte('x'), byte('y'), byte('z'):
@@ -194,9 +195,16 @@ func (g MathGene) MarshalTree() (*GeneNode, error) {
 				}
 				current = root
 			}
+			lastOp = string(chrom)
 			cursor = CursorOperator
 		case byte('{'):
+			node := &GeneNode{
+				Value:    lastOp,
+				Children: []*GeneNode{},
+			}
+			current.Add(node)
 			contextRoot = append(contextRoot, current)
+			current = node
 			cursor = CursorSeparator
 		case byte('}'):
 			current = contextRoot[len(contextRoot)-1]

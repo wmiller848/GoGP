@@ -1,8 +1,6 @@
 package gene
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestMathGeneIsGene(t *testing.T) {
 	g := MathGene("*{+$az,10,20}{-$ay,25,33}").Heal()
@@ -56,5 +54,15 @@ func TestMarshalTree2MathGene(t *testing.T) {
 		t.Error(err.Error())
 	}
 	AssertStr(t, root.Value, "+")
+	AssertInt(t, len(root.Children), 2)
+}
+
+func TestMarshalTree3MathGene(t *testing.T) {
+	g := MathGene("/{12,10-3,$a}{*21,5}")
+	root, err := g.MarshalTree()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	AssertStr(t, root.Value, "/")
 	AssertInt(t, len(root.Children), 2)
 }

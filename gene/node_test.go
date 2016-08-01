@@ -33,7 +33,7 @@ func TestMarshalTreeGeneNode(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	AssertStr(t, string(expr), "10*30*(21-77)")
+	AssertStr(t, string(expr), "(10*30*(21-77))")
 }
 
 func TestEvalBasicGeneNode(t *testing.T) {

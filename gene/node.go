@@ -17,18 +17,24 @@ func (n *GeneNode) Add(child *GeneNode) {
 
 func (n *GeneNode) MarshalExpression() ([]byte, error) {
 	bytes := []byte{}
+	if len(n.Children) > 1 {
+		bytes = append(bytes, byte('('))
+	}
 	for i, child := range n.Children {
 		if i != 0 {
 			bytes = append(bytes, []byte(n.Value)...)
 		}
-		if len(child.Children) > 1 {
-			bytes = append(bytes, byte('('))
-		}
+		//if len(child.Children) > 1 {
+		//bytes = append(bytes, byte('('))
+		//}
 		cbytes, _ := child.MarshalExpression()
 		bytes = append(bytes, cbytes...)
-		if len(child.Children) > 1 {
-			bytes = append(bytes, byte(')'))
-		}
+		//if len(child.Children) > 1 {
+		//bytes = append(bytes, byte(')'))
+		//}
+	}
+	if len(n.Children) > 1 {
+		bytes = append(bytes, byte(')'))
 	}
 	if len(n.Children) == 0 {
 		bytes = append(bytes, []byte(n.Value)...)

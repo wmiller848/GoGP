@@ -96,7 +96,7 @@ The first step is to sequence the `DNA`, like real `DNA`, our
 digital `DNA` contains four bases with a block size of three, additonaly
 each `DNA` strand can be read in three frames. Giving us 4^3=64
 possible encodings to work with. Each program contains two sequences
-of `DNA`, a `ying` and `yang` strand. Each `DNA` strand
+of `DNA`, a `yin` and `yang` strand. Each `DNA` strand
 is sequenced togeather and produces a single reading of the genes encoded.
 The process looks at each of the three readings in each strand, and
 produces the gene sequence in order of index of each gene.
@@ -114,13 +114,13 @@ D = [0xc0 to 0xff]
 
 For example, lets look at these two strands:
 
-`ying = [0,  24, 200, 241, 3,  12,  33, 4,  132]`
+`yin = [0,  24, 200, 241, 3,  12,  33, 4,  132]`
 
 `yang = [20, 51, 127, 9,   15, 198, 18, 10, 215]`
 
 We could read each strand in three ways:
 
-Strand `ying`:
+Strand `yin`:
 
 * `[0, 24, 200], [241, 3, 12], [33, 4, 132]`
 * `[24, 200, 241], [3, 12, 33], [4, 132, 0]`
@@ -141,14 +141,14 @@ do the same thing for both strands and then sequence the output
 together respecting index. Also note index for any given gene takes
 into account the offset of the frame it was read from.
 
-For example, say strand `ying` has a gene that starts at index 2
+For example, say strand `yin` has a gene that starts at index 2
 and ends at index 20. Say strand `yang` has two genes, one that
 starts at index 5 and goes to 15, and the other that starts at index
 25 and goes to index 30. We would produce the following gene sequence:
 
-`gene = ying[2:20] + yang[25:30]`
+`gene = yin[2:20] + yang[25:30]`
 
-Notice that `yang[5:15]` was not included, that is because strand `ying`
+Notice that `yang[5:15]` was not included, that is because strand `yin`
 gene sequence ran through those indexes. This works almost the same way
 in real `DNA`.
 
