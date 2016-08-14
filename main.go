@@ -7,9 +7,8 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/urfave/cli"
 	"github.com/wmiller848/GoGP/context"
-	// "github.com/urfave/cli"
-	"github.com/codegangsta/cli"
 )
 
 func run(pipe io.Reader, score float64, inputs, population, generations int, auto, visual bool) error {
@@ -88,19 +87,6 @@ func main() {
 					EnvVar: "GOGP_AUTO",
 				},
 			},
-			// Action: func(c *cli.Context) error {
-			// 	args := c.Args()
-			// 	var pipe io.Reader
-			// 	if len(args) == 0 {
-			// 		pipe = os.Stdin
-			// 	} else if len(args) == 1 {
-			// 		// Handle file io
-			// 	} else {
-			// 		fmt.Println("Too many arguments, provide path to one file.")
-			// 		return nil
-			// 	}
-			// 	return run(pipe, c.Float64("threshold"), c.Int("count"), c.Int("population"), c.Int("generations"), !c.Bool("auto"), c.Bool("verbose"))
-			// },
 			Action: func(c *cli.Context) {
 				args := c.Args()
 				var pipe io.Reader

@@ -76,7 +76,7 @@ func (p *Program) MarshalProgram() ([]byte, error) {
 	if inputMap != "" {
 		pgm = strings.Replace(pgm, "{{inputMap}}", inputMap, 1)
 	} else {
-		pgm = strings.Replace(pgm, "{{inputMap}}", "  'noInputStrings': null\n", 1)
+		pgm = strings.Replace(pgm, "{{inputMap}}", "  'noInputStrings': true\n", 1)
 	}
 	//=====
 	// AssertMap
@@ -85,7 +85,11 @@ func (p *Program) MarshalProgram() ([]byte, error) {
 	for k, v := range p.AssertMap {
 		assertMap += fmt.Sprintf("  '%v': %v\n", k, v)
 	}
-	pgm = strings.Replace(pgm, "{{assertMap}}", assertMap, 1)
+	if inputMap != "" {
+		pgm = strings.Replace(pgm, "{{assertMap}}", assertMap, 1)
+	} else {
+		pgm = strings.Replace(pgm, "{{assertMap}}", "  'noAssertStrings': true\n", 1)
+	}
 	// =====
 	// Variabls
 	// =====

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"regexp"
 	"sort"
 	"time"
 
@@ -15,6 +16,8 @@ import (
 )
 
 //type ScoreFunction func(int) int
+
+var word_regex = regexp.MustCompile(`[a-zA-Z\_\-]+`)
 
 type Context struct {
 	Population int
@@ -157,20 +160,37 @@ func (c *Context) EvalInline(fountain *Multiplexer, generation, inputs int, uuid
 		}
 		wrong := make(map[string]*Group)
 		for _, dat := range testData {
-			if wrong[dat.AssertStr] == nil {
-				wrong[dat.AssertStr] = &Group{
-					Count: 0,
-					Wrong: 0,
+			matched := word_regex.Match([]byte(dat.AssertStr))
+			if matched {
+				if wrong[dat.AssertStr] == nil {
+					wrong[dat.AssertStr] = &Group{
+						Count: 0,
+						Wrong: 0,
+					}
+				}
+			} else {
+				str := word_regex.String()
+				if wrong[str] == nil {
+					wrong[str] = &Group{
+						Count: 0,
+						Wrong: 0,
+					}
 				}
 			}
+
 			out := tree.Eval(dat.Input...)
 			diff := math.Abs(out - dat.Assert)
-			wrong[dat.AssertStr].Count++
-			// if log {
-			// 	fmt.Println(dat.AssertStr, dat.Assert, out)
-			// }
-			if diff >= threshold || math.IsNaN(out) {
-				wrong[dat.AssertStr].Wrong++
+			if matched {
+				wrong[dat.AssertStr].Count++
+				if diff >= threshold || math.IsNaN(out) {
+					wrong[dat.AssertStr].Wrong++
+				}
+			} else {
+				str := word_regex.String()
+				wrong[str].Count++
+				if diff >= 1 || math.IsNaN(out) {
+					wrong[str].Wrong++
+				}
 			}
 		}
 		total := 0.0

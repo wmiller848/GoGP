@@ -25,6 +25,7 @@ assertMap =
 ##
 match = (output) ->
   diff = Number.MAX_VALUE
+  return output if assertMap['noAssertStrings']
   ok = ""
   ov = 0
   for k, v of assertMap

@@ -35,6 +35,7 @@ func New(buffer []byte, inputs int) ([]*TestData, float64, DataMap, DataMap) {
 							data.Input = append(data.Input, num)
 						} else {
 							data.Assert = num
+							data.AssertStr = string(val)
 						}
 					} else {
 						num = NumberFromString(string(val), j)
