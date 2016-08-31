@@ -87,7 +87,7 @@ func main() {
 					EnvVar: "GOGP_AUTO",
 				},
 			},
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				args := c.Args()
 				var pipe io.Reader
 				if len(args) == 0 {
@@ -96,8 +96,10 @@ func main() {
 					// Handle file io
 				} else {
 					fmt.Println("Too many arguments, provide path to one file.")
+					return errors.New("to many arguments")
 				}
 				run(pipe, c.Float64("score"), c.Int("count"), c.Int("population"), c.Int("generations"), !c.Bool("auto"), c.Bool("verbose"))
+				return nil
 			},
 		},
 	}

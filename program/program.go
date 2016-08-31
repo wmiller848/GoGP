@@ -85,7 +85,7 @@ func (p *Program) MarshalProgram() ([]byte, error) {
 	for k, v := range p.AssertMap {
 		assertMap += fmt.Sprintf("  '%v': %v\n", k, v)
 	}
-	if inputMap != "" {
+	if assertMap != "" {
 		pgm = strings.Replace(pgm, "{{assertMap}}", assertMap, 1)
 	} else {
 		pgm = strings.Replace(pgm, "{{assertMap}}", "  'noAssertStrings': true\n", 1)

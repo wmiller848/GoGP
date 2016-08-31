@@ -262,7 +262,6 @@ In anycase, the process currently works as follows:
 Some items that would be great to have and being worked on, in a rough order:
 
 * Getting the Test Suite up to date
-* Much better data injestion and meta classification
 * Some parallelism for running the generations
 * Network io support for generated programs so you can send them data via tcp
 * Sexual crossover

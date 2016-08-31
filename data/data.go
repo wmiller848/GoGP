@@ -53,6 +53,7 @@ func New(buffer []byte, inputs int) ([]*TestData, float64, DataMap, DataMap) {
 			}
 		}
 	}
+
 	threshold := math.MaxFloat64
 	for i, iv := range assertMap {
 		for j, jv := range assertMap {
@@ -71,7 +72,6 @@ var base = 8.0
 var memo = make(map[int]DataMap)
 
 func NumberFromString(str string, j int) float64 {
-
 	if memo[j] == nil {
 		memo[j] = make(DataMap)
 	}
